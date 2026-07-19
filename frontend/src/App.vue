@@ -3,9 +3,12 @@
     <template v-if="currentView === 'tv'">
       <SmartTV />
     </template>
-    <template v-else>
+    <template v-else-if="currentView === 'admin'">
       <AdminLogin v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
       <Dashboard v-else :token="authToken" :admin="adminData" @logout="handleLogout" />
+    </template>
+    <template v-else>
+      <EmployeePWA />
     </template>
   </div>
 </template>
@@ -15,16 +18,18 @@ import { ref, onMounted } from 'vue';
 import AdminLogin from './components/AdminLogin.vue';
 import Dashboard from './components/Dashboard.vue';
 import SmartTV from './components/SmartTV.vue';
+import EmployeePWA from './components/EmployeePWA.vue';
 
 export default {
   name: 'App',
   components: {
     AdminLogin,
     Dashboard,
-    SmartTV
+    SmartTV,
+    EmployeePWA
   },
   setup() {
-    const currentView = ref('admin'); // 'admin' or 'tv'
+    const currentView = ref('employee'); // 'admin', 'tv', 'employee'
     const isLoggedIn = ref(false);
     const authToken = ref('');
     const adminData = ref(null);
@@ -51,19 +56,26 @@ export default {
     };
 
     onMounted(() => {
-      // Basic routing detection for Smart TV
+      // Basic routing detection for Smart TV and Admin
       if (window.location.pathname === '/pchclk') {
         currentView.value = 'tv';
         return;
       }
-
-      const storedToken = localStorage.getItem('pchclk_token');
-      const storedAdmin = localStorage.getItem('pchclk_admin');
       
-      if (storedToken && storedAdmin) {
-        authToken.value = storedToken;
-        adminData.value = JSON.parse(storedAdmin);
-        isLoggedIn.value = true;
+      if (window.location.pathname === '/admin') {
+        currentView.value = 'admin';
+        
+        // Load admin session if available
+        const storedToken = localStorage.getItem('pchclk_token');
+        const storedAdmin = localStorage.getItem('pchclk_admin');
+        
+        if (storedToken && storedAdmin) {
+          authToken.value = storedToken;
+          adminData.value = JSON.parse(storedAdmin);
+          isLoggedIn.value = true;
+        }
+      } else {
+        currentView.value = 'employee';
       }
     });
 
