@@ -22,7 +22,7 @@ All agents working on PchClk must strictly adhere to standard Git practices to p
 1. **Branch Management**:
    - Always create a branch (e.g. `feature/<topic>` or `bugfix/<topic>`) before making any relevant file changes.
    - Stage, test, and commit with appropriate conventional commit messages once tests are successful (or after fixing errors).
-   - Do NOT merge branches yourself; wait until the user explicitly directs you to merge.
+   - Do NOT merge branches yourself or push to remote repositories; you may ask the user if the changes are ready to merge or push once they are committed and tested, but never perform these actions without their explicit approval.
    - Code must be fully validated (linted, passing tests) before merging.
 2. **Commit Conventions**:
    - Commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
