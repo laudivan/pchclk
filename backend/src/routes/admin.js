@@ -212,4 +212,76 @@ router.get('/logs', adminAuth, (req, res) => {
   }
 });
 
+// PUT /api/admin/employees/:id - Update employee name and registration number
+router.put('/employees/:id', adminAuth, (req, res) => {
+  const employeeId = req.params.id;
+  const { name, registration_number } = req.body;
+
+  if (!name || !registration_number) {
+    return res.status(400).json({ error: 'Name and registration number required' });
+  }
+
+  try {
+    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Check if registration number is already taken by another employee
+    const duplicate = db.prepare('SELECT * FROM employees WHERE registration_number = ? AND id != ?').get(registration_number, employeeId);
+    if (duplicate) {
+      return res.status(400).json({ error: 'Registration number already exists' });
+    }
+
+    const result = db.prepare('UPDATE employees SET name = ?, registration_number = ? WHERE id = ?')
+      .run(name, registration_number, employeeId);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id, 
+      'UPDATE_EMPLOYEE', 
+      `/api/admin/employees/${employeeId}`, 
+      result.changes, 
+      JSON.stringify({ employeeId, name, registration_number })
+    );
+
+    res.json({ id: parseInt(employeeId, 10), name, registration_number });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/admin/employees/:id - Delete employee record (cascading deletes authorizations and logs)
+router.delete('/employees/:id', adminAuth, (req, res) => {
+  const employeeId = req.params.id;
+
+  try {
+    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const result = db.prepare('DELETE FROM employees WHERE id = ?').run(employeeId);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id, 
+      'DELETE_EMPLOYEE', 
+      `/api/admin/employees/${employeeId}`, 
+      result.changes, 
+      JSON.stringify({ employeeId, name: employee.name, registration_number: employee.registration_number })
+    );
+
+    res.json({ success: true, message: 'Employee deleted successfully', employeeId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

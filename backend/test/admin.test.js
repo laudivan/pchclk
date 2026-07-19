@@ -369,3 +369,78 @@ test('GET /api/admin/logs - Success retrieving filtered period logs', async () =
   assert.strictEqual(data.logs[0].employee_name, 'José Silva');
   assert.strictEqual(data.logs[0].hash_validated, 1);
 });
+
+// ----------------------------------------------------
+// 6. EMPLOYEE EDIT & DELETE TESTS
+// ----------------------------------------------------
+test('PUT /api/admin/employees/:id - Fail without authentication', async () => {
+  const { status } = await makeRequest('/api/admin/employees/1', {
+    method: 'PUT',
+    body: JSON.stringify({ name: 'José Updated', registration_number: 'EMP001' }),
+  });
+  assert.strictEqual(status, 401);
+});
+
+test('PUT /api/admin/employees/:id - Success updating employee name and registration', async () => {
+  const { status, data } = await makeRequest('/api/admin/employees/1', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ name: 'José Updated', registration_number: 'EMP001-NEW' }),
+  });
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.name, 'José Updated');
+  assert.strictEqual(data.registration_number, 'EMP001-NEW');
+
+  // Verify database update
+  const emp = db.prepare('SELECT * FROM employees WHERE id = 1').get();
+  assert.strictEqual(emp.name, 'José Updated');
+  assert.strictEqual(emp.registration_number, 'EMP001-NEW');
+
+  // Verify audit log entry
+  const log = db.prepare("SELECT * FROM audit_logs WHERE action = 'UPDATE_EMPLOYEE' ORDER BY id DESC LIMIT 1").get();
+  assert.ok(log);
+  assert.strictEqual(log.endpoint, '/api/admin/employees/1');
+});
+
+test('PUT /api/admin/employees/:id - Fail with duplicate registration', async () => {
+  // Try to update Employee 2 (Maria Santos, id: 2) to use 'EMP001-NEW'
+  const { status, data } = await makeRequest('/api/admin/employees/2', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ name: 'Maria Santos', registration_number: 'EMP001-NEW' }),
+  });
+
+  assert.strictEqual(status, 400);
+  assert.strictEqual(data.error, 'Registration number already exists');
+});
+
+test('DELETE /api/admin/employees/:id - Fail without authentication', async () => {
+  const { status } = await makeRequest('/api/admin/employees/1', {
+    method: 'DELETE',
+  });
+  assert.strictEqual(status, 401);
+});
+
+test('DELETE /api/admin/employees/:id - Success deleting employee', async () => {
+  const { status, data } = await makeRequest('/api/admin/employees/1', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.success, true);
+
+  // Verify deletion from DB
+  const emp = db.prepare('SELECT * FROM employees WHERE id = 1').get();
+  assert.strictEqual(emp, undefined);
+
+  // Verify cascading deletion of authorizations (employee_id = 1 should have 0 records)
+  const authCount = db.prepare('SELECT count(*) as count FROM device_authorizations WHERE employee_id = 1').get().count;
+  assert.strictEqual(authCount, 0);
+
+  // Verify audit log entry
+  const log = db.prepare("SELECT * FROM audit_logs WHERE action = 'DELETE_EMPLOYEE' ORDER BY id DESC LIMIT 1").get();
+  assert.ok(log);
+  assert.strictEqual(log.endpoint, '/api/admin/employees/1');
+});
