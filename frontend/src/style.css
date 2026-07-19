@@ -8,7 +8,7 @@
 
   /* HSL Color System - Deep Violet and Glowing Accents */
   --bg-dark: #090a0f;
-  --bg-card: rgba(18, 20, 29, 0.65);
+  --bg-card: rgba(118, 120, 129, 0.6);
   --border-glass: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(124, 77, 255, 0.4);
   
@@ -21,6 +21,9 @@
   --text-primary: #f3f4f6;
   --text-muted: #9ca3af;
   --text-highlight: #ffffff;
+
+  --bs-secondary-color: rgba(133, 137, 141, 0.75);
+  --bs-emphasis-color: rgba(11, 15, 20, 0.75);
 }
 
 body {
@@ -153,6 +156,10 @@ body {
 }
 
 /* Custom Table Design */
+.table {
+  --bs-table-bg: none;
+}
+
 .custom-table {
   border-collapse: separate;
   border-spacing: 0 8px;
