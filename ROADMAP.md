@@ -7,7 +7,7 @@
 
 ## Phase 2: Core Backend (REST API)
 - [x] Device authorization flow (Admin QR generation -> Device validation).
-- [ ] Quarterly hash rotation generator (15-minute window timestamp validations).
+- [x] Quarterly hash rotation generator (15-minute window timestamp validations).
 - [x] Audit Log system implementation (intercepting and recording affected rows, timestamp, user, action).
 - [x] Multilingual internationalization (i18n) setup for API error/status payloads.
 
