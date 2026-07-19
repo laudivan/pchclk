@@ -236,41 +236,61 @@
             <!-- Logs list -->
             <div v-else-if="logs.length > 0" class="table-responsive">
               <table class="table custom-table text-white">
-                <thead>
-                  <tr>
-                    <th>EMPLOYEE</th>
-                    <th>REGISTRATION</th>
-                    <th>PUNCH DATE & TIME</th>
-                    <th>TYPE</th>
-                    <th>VERIFICATION</th>
-                    <th>IP ADDRESS</th>
-                  </tr>
-                </thead>
                 <tbody>
                   <tr v-for="log in logs" :key="log.id">
-                    <td class="fw-bold text-white">{{ log.employee_name }}</td>
-                    <td><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ log.registration_number }}</code></td>
-                    <td class="small">{{ formatTimestamp(log.timestamp) }}</td>
-                    <td>
-                      <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
-                      </span>
-                      <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1">
-                        <i class="bi bi-box-arrow-left me-1"></i> Punch Out
-                      </span>
-                    </td>
-                    <td>
-                      <span v-if="log.hash_validated === 1" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25">
-                        <i class="bi bi-qr-code"></i> Dynamic QR Verified
-                      </span>
-                      <span v-else-if="log.device_key === 'manual_admin'" class="badge-status badge-inactive bg-warning bg-opacity-15 text-warning border-warning border-opacity-25">
-                        <i class="bi bi-pencil-fill"></i> Manual Admin
-                      </span>
-                      <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25">
-                        <i class="bi bi-exclamation-octagon-fill"></i> Manual Bypass
-                      </span>
-                    </td>
-                    <td><code class="text-white-50 bg-dark px-2 py-1 rounded small">{{ log.ip_address || 'Unknown' }}</code></td>
+                    <!-- Non-editing Mode -->
+                    <template v-if="editingLogId !== log.id">
+                      <td class="align-middle fw-bold text-white" style="width: 25%;">
+                        {{ log.employee_name }}
+                      </td>
+                      <td class="align-middle" style="width: 30%;">
+                        <span class="small font-monospace text-white-50">{{ formatTimestamp(log.timestamp) }}</span>
+                      </td>
+                      <td class="align-middle" style="width: 25%;">
+                        <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1 small">
+                          <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
+                        </span>
+                        <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1 small">
+                          <i class="bi bi-box-arrow-left me-1"></i> Punch Out
+                        </span>
+                      </td>
+                      <td class="align-middle text-end" style="width: 20%;">
+                        <div class="d-inline-flex gap-1">
+                          <button @click="startEditLog(log)" class="btn btn-outline-warning btn-sm p-1" title="Edit Entry" style="line-height: 1;">
+                            <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
+                          </button>
+                          <button @click="deleteLog(log.id)" class="btn btn-outline-danger btn-sm p-1" title="Delete Entry" style="line-height: 1;">
+                            <i class="bi bi-trash" style="font-size: 0.8rem;"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </template>
+
+                    <!-- Inline Editing Mode -->
+                    <template v-else>
+                      <td class="align-middle fw-bold text-white" style="width: 25%;">
+                        {{ log.employee_name }}
+                      </td>
+                      <td class="align-middle" style="width: 30%;">
+                        <input type="time" v-model="editLogTime" class="form-control form-control-sm bg-dark border-glass text-white font-monospace" step="1" required />
+                      </td>
+                      <td class="align-middle" style="width: 25%;">
+                        <select v-model="editLogType" class="form-select form-select-sm bg-dark border-glass text-white" required>
+                          <option value="punch_in">In</option>
+                          <option value="punch_out">Out</option>
+                        </select>
+                      </td>
+                      <td class="align-middle text-end" style="width: 20%;">
+                        <div class="d-inline-flex gap-1">
+                          <button @click="saveEditLog(log)" class="btn btn-success btn-sm px-2 py-1">
+                            <i class="bi bi-check-lg"></i>
+                          </button>
+                          <button @click="editingLogId = null" class="btn btn-outline-secondary btn-sm px-2 py-1">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </template>
                   </tr>
                 </tbody>
               </table>
