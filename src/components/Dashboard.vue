@@ -176,8 +176,8 @@
                         </span>
                       </td>
                       <td class="text-end">
-                        <button @click="authorizeDevice(emp)" class="btn btn-outline-secondary btn-sm p-2" title="Authorize Device">
-                          <i class="bi bi-qr-code"></i>
+                        <button @click="authorizeDevice(emp)" class="btn btn-outline-primary btn-sm px-3 py-1 d-flex align-items-center gap-1" title="Get Pairing Code">
+                          <i class="bi bi-key-fill"></i> <span class="small">Pair</span>
                         </button>
                       </td>
                     </tr>
@@ -416,35 +416,37 @@
       </div>
     </div>
 
-    <!-- MODAL 2: AUTHORIZE DEVICE (QR CODE) -->
+    <!-- MODAL 2: AUTHORIZE DEVICE (PAIRING CODE) -->
     <div v-if="showAuthModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
-            <h5 class="modal-title text-white fw-bold">Device Authorization</h5>
+            <h5 class="modal-title text-white fw-bold"><i class="bi bi-key-fill text-primary me-2"></i>Device Pairing Code</h5>
             <button type="button" @click="showAuthModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-center">
-            <p class="text-muted small">Ask the employee to open their PchClk PWA and scan the QR Code below, or manually enter the numeric code.</p>
-            
-            <h4 class="text-white fw-bold mb-3">{{ selectedEmployeeName }}</h4>
+            <p class="text-muted small mb-1">Share this code with the employee.</p>
+            <p class="text-muted small mb-4">They must enter it in the <strong class="text-white">PchClk Employee PWA</strong> to pair their device.</p>
 
-            <!-- QR Code Canvas -->
-            <div class="mb-4">
-              <div class="qr-container bg-white p-3 d-inline-block rounded-4">
-                <canvas ref="qrCanvas"></canvas>
-              </div>
+            <h4 class="text-white fw-bold mb-4">{{ selectedEmployeeName }}</h4>
+
+            <!-- Prominent pairing code display -->
+            <div class="pairing-code-block mb-4">
+              <div class="pairing-code-label">PAIRING CODE</div>
+              <div class="pairing-code-digits">{{ authCode }}</div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary mt-3 px-4"
+                @click="copyAuthCode"
+              >
+                <i class="bi" :class="codeCopied ? 'bi-check-lg text-success' : 'bi-clipboard'"></i>
+                {{ codeCopied ? 'Copied!' : 'Copy Code' }}
+              </button>
             </div>
 
-            <!-- 6-digit Code -->
-            <div class="mb-2">
-              <span class="text-muted small fw-bold d-block mb-1">NUMERIC AUTHORIZATION CODE</span>
-              <div class="auth-number-code">{{ authCode }}</div>
-            </div>
-
-            <div class="text-warning small fs-8 mt-3 bg-warning bg-opacity-10 py-2 px-3 rounded border-warning border-opacity-15">
+            <div class="text-warning small fs-8 bg-warning bg-opacity-10 py-2 px-3 rounded border-warning border-opacity-15">
               <i class="bi bi-exclamation-circle-fill me-1"></i>
-              Valid for 24 hours. Pairing a new device invalidates previous ones automatically.
+              Valid for 24 hours. Issuing a new code invalidates the previous one automatically.
             </div>
           </div>
           <div class="modal-footer border-glass justify-content-center">
@@ -673,8 +675,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch, nextTick } from 'vue';
-import QRCode from 'qrcode';
+import { ref, onMounted, watch } from 'vue';
 
 export default {
   name: 'Dashboard',
@@ -715,7 +716,7 @@ export default {
     const showAuthModal = ref(false);
     const selectedEmployeeName = ref('');
     const authCode = ref('');
-    const qrCanvas = ref(null);
+    const codeCopied = ref(false);
 
     // Logs state
     const logs = ref([]);
@@ -1010,25 +1011,22 @@ export default {
         const data = await response.json();
         selectedEmployeeName.value = emp.name;
         authCode.value = data.authCode;
+        codeCopied.value = false;
         showAuthModal.value = true;
-
-        await nextTick();
-        if (qrCanvas.value) {
-          QRCode.toCanvas(qrCanvas.value, data.qrUrl, {
-            width: 190,
-            margin: 1,
-            color: {
-              dark: '#000000',
-              light: '#ffffff'
-            }
-          }, (err) => {
-            if (err) console.error('QR rendering error:', err);
-          });
-        }
 
         fetchEmployees();
       } catch (err) {
         alert(err.message);
+      }
+    };
+
+    const copyAuthCode = async () => {
+      try {
+        await navigator.clipboard.writeText(authCode.value);
+        codeCopied.value = true;
+        setTimeout(() => { codeCopied.value = false; }, 2000);
+      } catch {
+        // fallback: select text manually
       }
     };
 
@@ -1290,7 +1288,8 @@ export default {
       showAuthModal,
       selectedEmployeeName,
       authCode,
-      qrCanvas,
+      codeCopied,
+      copyAuthCode,
       logs,
       logsLoading,
       logsError,
@@ -1395,5 +1394,28 @@ export default {
 }
 .mobile-menu-btn:hover {
   background: rgba(255,255,255,0.05);
+}
+.pairing-code-block {
+  background: rgba(140, 98, 255, 0.08);
+  border: 1px solid rgba(140, 98, 255, 0.25);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  display: inline-block;
+  min-width: 240px;
+}
+.pairing-code-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--text-muted, #888);
+  margin-bottom: 0.5rem;
+}
+.pairing-code-digits {
+  font-size: 2.8rem;
+  font-weight: 800;
+  font-family: 'Outfit', 'Courier New', monospace;
+  letter-spacing: 0.3em;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(140, 98, 255, 0.6);
 }
 </style>

@@ -1,17 +1,15 @@
 import app from './app.js';
 import { config } from './config/index.js';
 import { runMigrations } from './db/migrate.js';
-import { runSeeds } from './db/seed.js';
+import { runBootstrap } from './db/bootstrap.js';
 
 console.log(`Starting PchClk Backend in [${config.nodeEnv}] mode...`);
 
-// Run migrations on start
+// Run schema migrations on every start (idempotent)
 runMigrations();
 
-// Run seeds in development mode
-if (config.nodeEnv === 'development') {
-  runSeeds();
-}
+// Bootstrap default superadmin if no admins exist (runs in all environments)
+runBootstrap();
 
 // Bind server port and listen
 app.listen(config.port, '0.0.0.0', () => {
