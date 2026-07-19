@@ -12,7 +12,7 @@
 - [x] Multilingual internationalization (i18n) setup for API error/status payloads.
 
 ## Phase 3: Frontend Interfaces (Vue.js + Bootstrap)
-- [ ] **Smart TV Interface**: Live clock + high-contrast auto-refreshing QR Code.
+- [x] **Smart TV Interface**: Live clock + high-contrast auto-refreshing QR Code.
 - [ ] **Employee PWA UI**: Offline sync, registration, last 3 months local reports, camera QR-scanner.
 - [x] **Admin Dashboard UI**: Configurable custom frequency periods (e.g., Jun 20 to Jul 19), logs visualization, and device authorization modal.
 
