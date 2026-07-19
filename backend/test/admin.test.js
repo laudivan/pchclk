@@ -545,3 +545,18 @@ test('DELETE /api/admin/admins/:id - Success deleting admin', async () => {
   const deletedAdmin = db.prepare('SELECT * FROM admins WHERE id = ?').get(targetAdmin.id);
   assert.strictEqual(deletedAdmin, undefined);
 });
+
+// ----------------------------------------------------
+// 8. PUBLIC SMART TV ENDPOINTS
+// ----------------------------------------------------
+test('GET /api/tv/token - Public token endpoint', async () => {
+  const { status, data } = await makeRequest('/api/tv/token');
+
+  assert.strictEqual(status, 200);
+  assert.ok(data.token);
+  assert.strictEqual(typeof data.token, 'string');
+  assert.strictEqual(data.token.length, 64); // SHA256 hex is 64 characters
+  assert.ok(typeof data.expires_in === 'number');
+  assert.ok(data.expires_in >= 0);
+  assert.ok(data.expires_in <= 900); // max 15 minutes
+});
