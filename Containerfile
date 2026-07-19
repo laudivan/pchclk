@@ -1,21 +1,15 @@
-# Stage 1: Build Frontend SPA
-FROM node:22-alpine AS frontend-builder
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
+COPY src/ ./src/ 
+COPY public/ ./public/
+COPY package*.json .
+RUN ls -la && \
+  npm ci && \
+  mv ./src/index.html ./src/vite.config.js . && \
+  npm run build && \
+  mkdir -p data && \
+  chown -R 1000:1000 data
 
-# Stage 2: Build Backend dependencies
-FROM node:22-alpine AS backend-builder
-WORKDIR /app
-# Pre-create data directory owned by default 'node' user (UID 1000)
-RUN mkdir -p data && chown -R 1000:1000 data
-COPY backend/package*.json ./
-RUN npm ci --omit=dev
-COPY backend/src ./src
-
-# Stage 3: Runner using official lightweight Alpine image
 FROM node:22-alpine AS runner
 WORKDIR /app
 
@@ -23,14 +17,12 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV DB_PATH=/app/data/pchclk.db
 
-# Copy files and ensure ownership by 'node' user
-COPY --from=backend-builder --chown=node:node /app/data ./data
-COPY --from=backend-builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=backend-builder --chown=node:node /app/package*.json ./
-COPY --from=backend-builder --chown=node:node /app/src ./src
-
-# Copy built static frontend SPA assets
-COPY --from=frontend-builder --chown=node:node /app/dist ./public
+COPY --from=builder --chown=node:node /app/data ./data
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package*.json ./
+COPY --from=builder --chown=node:node /app/src ./src
+COPY --from=builder --chown=node:node /app/dist ./public
+COPY --from=builder --chown=node:node /app/index.html /app/vite.config.js .
 
 USER node
 

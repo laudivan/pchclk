@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Containerfile
-    container_name: pchclk_backend
+    container_name: PchClk
     ports:
       - "3000:3000"
     env_file:
