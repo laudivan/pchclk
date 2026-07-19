@@ -1,0 +1,250 @@
+/* Custom Dark Theme & Glassmorphism Design System for PchClk Dashboard */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* HSL Color System - Deep Violet and Glowing Accents */
+  --bg-dark: #090a0f;
+  --bg-card: rgba(18, 20, 29, 0.65);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(124, 77, 255, 0.4);
+  
+  --primary-color: #8c62ff;
+  --primary-glow: rgba(140, 98, 255, 0.35);
+  --success-color: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.25);
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --text-primary: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-highlight: #ffffff;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(124, 77, 255, 0.12) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Inputs & Form Controls */
+.form-control, .form-select {
+  background-color: rgba(15, 17, 26, 0.7);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary) !important;
+  border-radius: 10px;
+  padding: 12px 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: rgba(15, 17, 26, 0.95);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+  outline: none;
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+/* Custom Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #8c62ff 0%, #703bf5 100%);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 550;
+  color: #fff;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(140, 98, 255, 0.55);
+  background: linear-gradient(135deg, #9a75ff 0%, #7e4dff 100%);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline-secondary {
+  border: 1px solid var(--border-glass);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.btn-outline-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+}
+
+/* Tab controls */
+.nav-pills .nav-link {
+  color: var(--text-muted);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 550;
+  transition: all 0.2s;
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+/* Dynamic Badge Styles */
+.badge-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-inactive {
+  background: rgba(239, 44, 44, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 44, 44, 0.25);
+}
+
+/* Custom Table Design */
+.custom-table {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.custom-table tr {
+  box-shadow: none;
+  background: transparent;
+}
+
+.custom-table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  border: none;
+  padding: 12px 16px;
+}
+
+.custom-table td {
+  background: rgba(20, 22, 33, 0.4);
+  border-top: 1px solid var(--border-glass);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 16px;
+}
+
+.custom-table td:first-child {
+  border-left: 1px solid var(--border-glass);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.custom-table td:last-child {
+  border-right: 1px solid var(--border-glass);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.custom-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Modal styling */
+.modal-content {
+  background-color: #12141d;
+  border: 1px solid var(--border-glass);
+  border-radius: 18px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-glass);
+  padding: 20px 24px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-glass);
+  padding: 20px 24px;
+}
+
+/* QR Code and Credentials visualization */
+.qr-container {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  display: inline-block;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.auth-number-code {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  letter-spacing: 4px;
+  font-weight: bold;
+  color: var(--primary-color);
+  text-shadow: 0 0 15px var(--primary-glow);
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232530;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #323545;
+}
