@@ -8,12 +8,13 @@ services:
     container_name: PchClk
     ports:
       - "3000:3000"
+      - "3001:3001"
     env_file:
       - .env
     volumes:
-      - pchclk_db_data:/app/data
+      - data:/app/data
     restart: always
 
 volumes:
-  pchclk_db_data:
+  data:
     driver: local

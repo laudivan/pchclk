@@ -18,6 +18,9 @@ dist/
 .env.local
 .env.*.local
 
+# TLS certificates (generated locally, never commit private keys)
+certs/
+
 # IDE / OS Files
 .DS_Store
 .idea/

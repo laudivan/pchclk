@@ -23,6 +23,9 @@ RUN npm ci --omit=dev
 # Copy backend source
 COPY src/ ./src/
 
+# Copy TLS certificates (self-signed, for LAN HTTPS camera access)
+COPY certs/ ./certs/
+
 # Copy built frontend SPA into /public (Express serves this as static)
 COPY --from=frontend-builder /app/dist ./public
 
@@ -32,5 +35,6 @@ RUN mkdir -p data && chown -R node:node data /app
 USER node
 
 EXPOSE 3000
+EXPOSE 3001
 
 CMD ["node", "src/server.js"]
