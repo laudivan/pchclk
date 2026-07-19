@@ -29,6 +29,7 @@ const { default: app } = await import('../src/app.js');
 
 let server;
 let baseUrl;
+let newlyPairedDeviceKey;
 
 // Setup server and test database
 before(async () => {
@@ -231,4 +232,70 @@ test('POST /api/punch - Fail with invalid/expired token', async () => {
 
   assert.strictEqual(status, 400);
   assert.strictEqual(data.error, 'Invalid or expired QR code');
+});
+
+// ----------------------------------------------------
+// DEVICE PAIRING & LOGS ENDPOINT TESTS
+// ----------------------------------------------------
+test('POST /api/device/pair - Fail with missing code', async () => {
+  const { status, data } = await makeRequest('/api/device/pair', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+  assert.strictEqual(status, 400);
+  assert.strictEqual(data.error, 'Authorization code is required');
+});
+
+test('POST /api/device/pair - Fail with invalid code', async () => {
+  const { status, data } = await makeRequest('/api/device/pair', {
+    method: 'POST',
+    body: JSON.stringify({ auth_code: 'INVALID' }),
+  });
+  assert.strictEqual(status, 400);
+  assert.strictEqual(data.error, 'Invalid or expired authorization code');
+});
+
+test('POST /api/device/pair - Success pairing device', async () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  db.prepare(`
+    INSERT INTO device_authorizations (employee_id, auth_code, is_active, expires_at)
+    VALUES (1, 'PAIROK', 1, ?)
+  `).run(tomorrow.toISOString());
+
+  const { status, data } = await makeRequest('/api/device/pair', {
+    method: 'POST',
+    body: JSON.stringify({ auth_code: 'PAIROK' }),
+  });
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.success, true);
+  assert.ok(data.device_key);
+  newlyPairedDeviceKey = data.device_key;
+  assert.strictEqual(data.employee.name, 'José Silva');
+
+  const activeCount = db.prepare('SELECT count(*) as count FROM device_authorizations WHERE employee_id = 1 AND is_active = 1').get().count;
+  assert.strictEqual(activeCount, 1);
+});
+
+test('GET /api/device/logs - Fail without device key', async () => {
+  const { status, data } = await makeRequest('/api/device/logs');
+  assert.strictEqual(status, 400);
+  assert.strictEqual(data.error, 'Device key is required');
+});
+
+test('GET /api/device/logs - Success retrieving logs', async () => {
+  // Add a test log for newlyPairedDeviceKey so it returns records
+  db.prepare(`
+    INSERT INTO logs (employee_id, device_key, hash_validated, ip_address)
+    VALUES (1, ?, 1, '127.0.0.1')
+  `).run(newlyPairedDeviceKey);
+
+  const { status, data } = await makeRequest(`/api/device/logs?device_key=${newlyPairedDeviceKey}`);
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.success, true);
+  assert.ok(Array.isArray(data.logs));
+  assert.ok(data.logs.length >= 1);
 });
