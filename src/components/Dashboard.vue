@@ -423,11 +423,11 @@
             <div class="modal-body p-4 text-start">
               <div class="mb-3">
                 <label for="empName" class="form-label text-muted small fw-bold">FULL NAME</label>
-                <input v-model="newEmpName" type="text" id="empName" class="form-control" placeholder="José da Silva" required />
+                <input v-model="newEmpName" type="text" id="empName" class="form-control" required />
               </div>
               <div class="mb-3">
                 <label for="empReg" class="form-label text-muted small fw-bold">REGISTRATION NUMBER (UNIQUE)</label>
-                <input v-model="newEmpReg" type="text" id="empReg" class="form-control" placeholder="EMP1024" required />
+                <input v-model="newEmpReg" type="text" id="empReg" class="form-control" required />
               </div>
 
               <div v-if="addError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-0">
