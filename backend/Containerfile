@@ -1,32 +1,36 @@
-# Stage 1: Build stage
-FROM node:20-alpine AS builder
-
+# Stage 1: Build Frontend SPA
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
-# Pre-create the data directory and set permissions for distroless nonroot user (uid: 65532)
+# Stage 2: Build Backend dependencies
+FROM node:20-alpine AS backend-builder
+WORKDIR /app
 RUN mkdir -p data && chown -R 65532:65532 data
-
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci --omit=dev
+COPY backend/src ./src
 
-COPY src/ ./src/
-
-# Stage 2: Minimal runtime stage using Google Distroless Node.js
+# Stage 3: Runner
 FROM gcr.io/distroless/nodejs20-debian12 AS runner
-
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV DB_PATH=/app/data/pchclk.db
 
-# Copy pre-created data directory and source files from builder with correct nonroot ownership
-COPY --from=builder --chown=nonroot:nonroot /app/data ./data
-COPY --from=builder --chown=nonroot:nonroot /app/node_modules ./node_modules
-COPY --from=builder --chown=nonroot:nonroot /app/package*.json ./
-COPY --from=builder --chown=nonroot:nonroot /app/src ./src
+# Copy pre-created data directory and dependencies
+COPY --from=backend-builder --chown=nonroot:nonroot /app/data ./data
+COPY --from=backend-builder --chown=nonroot:nonroot /app/node_modules ./node_modules
+COPY --from=backend-builder --chown=nonroot:nonroot /app/package*.json ./
+COPY --from=backend-builder --chown=nonroot:nonroot /app/src ./src
 
-# Run as non-privileged system user (distroless nonroot user is uid 65532)
+# Copy built frontend assets to serve statically
+COPY --from=frontend-builder --chown=nonroot:nonroot /app/dist ./public
+
 USER nonroot
 
 EXPOSE 3000
