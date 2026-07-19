@@ -284,4 +284,156 @@ router.delete('/employees/:id', adminAuth, (req, res) => {
   }
 });
 
+// GET /api/admin/admins - Get list of administrators (superadmin only)
+router.get('/admins', adminAuth, (req, res) => {
+  if (req.admin.role !== 'superadmin') {
+    return res.status(403).json({ error: 'Only superadmins can manage administrator accounts' });
+  }
+
+  try {
+    const admins = db.prepare('SELECT id, username, role, created_at FROM admins ORDER BY username ASC').all();
+    res.json(admins);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/admin/admins - Create a new administrator account (superadmin only)
+router.post('/admins', adminAuth, (req, res) => {
+  if (req.admin.role !== 'superadmin') {
+    return res.status(403).json({ error: 'Only superadmins can manage administrator accounts' });
+  }
+
+  const { username, password, role } = req.body;
+
+  if (!username || !password || !role) {
+    return res.status(400).json({ error: 'Username, password and role required' });
+  }
+
+  if (role !== 'admin' && role !== 'superadmin') {
+    return res.status(400).json({ error: 'Invalid role. Must be admin or superadmin.' });
+  }
+
+  try {
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const result = db.prepare('INSERT INTO admins (username, password_hash, role) VALUES (?, ?, ?)')
+      .run(username, passwordHash, role);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id, 
+      'CREATE_ADMIN', 
+      '/api/admin/admins', 
+      result.changes, 
+      JSON.stringify({ adminId: result.lastInsertRowid, username, role })
+    );
+
+    res.json({ id: result.lastInsertRowid, username, role });
+  } catch (error) {
+    if (error.message.includes('UNIQUE')) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/admin/admins/:id - Update an administrator account (superadmin only)
+router.put('/admins/:id', adminAuth, (req, res) => {
+  if (req.admin.role !== 'superadmin') {
+    return res.status(403).json({ error: 'Only superadmins can manage administrator accounts' });
+  }
+
+  const adminId = req.params.id;
+  const { username, password, role } = req.body;
+
+  if (!username || !role) {
+    return res.status(400).json({ error: 'Username and role required' });
+  }
+
+  if (role !== 'admin' && role !== 'superadmin') {
+    return res.status(400).json({ error: 'Invalid role. Must be admin or superadmin.' });
+  }
+
+  try {
+    const existing = db.prepare('SELECT * FROM admins WHERE id = ?').get(adminId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Administrator not found' });
+    }
+
+    // Check if username is taken by another admin
+    const duplicate = db.prepare('SELECT * FROM admins WHERE username = ? AND id != ?').get(username, adminId);
+    if (duplicate) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    let result;
+    if (password) {
+      const passwordHash = bcrypt.hashSync(password, 10);
+      result = db.prepare('UPDATE admins SET username = ?, password_hash = ?, role = ? WHERE id = ?')
+        .run(username, passwordHash, role, adminId);
+    } else {
+      result = db.prepare('UPDATE admins SET username = ?, role = ? WHERE id = ?')
+        .run(username, role, adminId);
+    }
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id, 
+      'UPDATE_ADMIN', 
+      `/api/admin/admins/${adminId}`, 
+      result.changes, 
+      JSON.stringify({ adminId, username, role })
+    );
+
+    res.json({ id: parseInt(adminId, 10), username, role });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/admin/admins/:id - Delete an administrator account (superadmin only)
+router.delete('/admins/:id', adminAuth, (req, res) => {
+  if (req.admin.role !== 'superadmin') {
+    return res.status(403).json({ error: 'Only superadmins can manage administrator accounts' });
+  }
+
+  const adminId = req.params.id;
+
+  // Prevent self-deletion
+  if (parseInt(adminId, 10) === req.admin.id) {
+    return res.status(400).json({ error: 'Self-deletion is not allowed' });
+  }
+
+  try {
+    const existing = db.prepare('SELECT * FROM admins WHERE id = ?').get(adminId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Administrator not found' });
+    }
+
+    const result = db.prepare('DELETE FROM admins WHERE id = ?').run(adminId);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id, 
+      'DELETE_ADMIN', 
+      `/api/admin/admins/${adminId}`, 
+      result.changes, 
+      JSON.stringify({ adminId, username: existing.username, role: existing.role })
+    );
+
+    res.json({ success: true, message: 'Administrator deleted successfully', adminId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

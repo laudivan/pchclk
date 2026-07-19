@@ -444,3 +444,104 @@ test('DELETE /api/admin/employees/:id - Success deleting employee', async () => 
   assert.ok(log);
   assert.strictEqual(log.endpoint, '/api/admin/employees/1');
 });
+
+// ----------------------------------------------------
+// 7. ADMINISTRATOR USER CRUD TESTS (SUPERADMIN ONLY)
+// ----------------------------------------------------
+test('GET /api/admin/admins - Fail for unauthorized role', async () => {
+  // 1. Create a regular admin using superadmin token
+  const { status: createStatus, data: createData } = await makeRequest('/api/admin/admins', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ username: 'regadmin', password: 'password123', role: 'admin' }),
+  });
+  assert.strictEqual(createStatus, 200);
+  assert.strictEqual(createData.username, 'regadmin');
+  assert.strictEqual(createData.role, 'admin');
+
+  // 2. Log in as the regular admin
+  const { status: loginStatus, data: loginData } = await makeRequest('/api/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: 'regadmin', password: 'password123' }),
+  });
+  assert.strictEqual(loginStatus, 200);
+  const regAdminToken = loginData.token;
+
+  // 3. Request list with regular admin token
+  const { status: listStatus, data: listData } = await makeRequest('/api/admin/admins', {
+    headers: { Authorization: `Bearer ${regAdminToken}` },
+  });
+  assert.strictEqual(listStatus, 403);
+  assert.strictEqual(listData.error, 'Only superadmins can manage administrator accounts');
+});
+
+test('GET /api/admin/admins - Success for superadmin', async () => {
+  const { status, data } = await makeRequest('/api/admin/admins', {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  assert.strictEqual(status, 200);
+  assert.ok(Array.isArray(data));
+  assert.ok(data.length >= 2); // 'admin' and 'regadmin'
+  const adminUser = data.find(u => u.username === 'admin');
+  assert.ok(adminUser);
+  assert.strictEqual(adminUser.role, 'superadmin');
+});
+
+test('POST /api/admin/admins - Fail duplicate username', async () => {
+  const { status, data } = await makeRequest('/api/admin/admins', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ username: 'regadmin', password: 'password456', role: 'admin' }),
+  });
+
+  assert.strictEqual(status, 400);
+  assert.strictEqual(data.error, 'Username already exists');
+});
+
+test('PUT /api/admin/admins/:id - Success updating admin', async () => {
+  // Let's update 'regadmin'
+  const targetAdmin = db.prepare("SELECT id FROM admins WHERE username = 'regadmin'").get();
+  assert.ok(targetAdmin);
+
+  const { status, data } = await makeRequest(`/api/admin/admins/${targetAdmin.id}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ username: 'regadmin-updated', role: 'admin' }),
+  });
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.username, 'regadmin-updated');
+
+  const updatedAdmin = db.prepare('SELECT * FROM admins WHERE id = ?').get(targetAdmin.id);
+  assert.strictEqual(updatedAdmin.username, 'regadmin-updated');
+});
+
+test('DELETE /api/admin/admins/:id - Prevent self-deletion', async () => {
+  const currentAdmin = db.prepare("SELECT id FROM admins WHERE username = 'admin'").get();
+  assert.ok(currentAdmin);
+
+  const { status, data } = await makeRequest(`/api/admin/admins/${currentAdmin.id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  assert.strictEqual(status, 400);
+  assert.strictEqual(data.error, 'Self-deletion is not allowed');
+});
+
+test('DELETE /api/admin/admins/:id - Success deleting admin', async () => {
+  const targetAdmin = db.prepare("SELECT id FROM admins WHERE username = 'regadmin-updated'").get();
+  assert.ok(targetAdmin);
+
+  const { status, data } = await makeRequest(`/api/admin/admins/${targetAdmin.id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.success, true);
+
+  const deletedAdmin = db.prepare('SELECT * FROM admins WHERE id = ?').get(targetAdmin.id);
+  assert.strictEqual(deletedAdmin, undefined);
+});
