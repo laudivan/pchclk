@@ -333,20 +333,17 @@ test('GET /api/admin/logs - Success retrieving filtered period logs', async () =
 
   // Insert mock logs
   const insertLog = db.prepare(`
-    INSERT INTO logs (employee_id, timestamp, device_key, hash_validated, ip_address, user_agent)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated, ip_address, user_agent)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   // Insert punch log within the expected range
-  // Suppose start day is configured to 15.
-  // For the currentMonth, range is (currentMonth - 1) on day 15 to currentMonth on day 14.
-  // Let's create a timestamp within that range: e.g. currentYear-currentMonth-01
   const testDateIn = new Date(Date.UTC(currentYear, currentMonth - 1, 1, 12, 0, 0));
-  insertLog.run(1, testDateIn.toISOString(), 'test-device-key', 1, '127.0.0.1', 'Mozilla');
+  insertLog.run(1, testDateIn.toISOString(), 'test-device-key', 'punch_in', 1, '127.0.0.1', 'Mozilla');
 
-  // Insert punch log outside the range (e.g. 3 months ago)
+  // Insert punch log outside the range
   const testDateOut = new Date(Date.UTC(currentYear, currentMonth - 4, 1, 12, 0, 0));
-  insertLog.run(1, testDateOut.toISOString(), 'test-device-key', 1, '127.0.0.1', 'Mozilla');
+  insertLog.run(1, testDateOut.toISOString(), 'test-device-key', 'punch_out', 1, '127.0.0.1', 'Mozilla');
 
   // Let's run a POST config to set startDay = 15
   await makeRequest('/api/admin/config', {
@@ -355,7 +352,11 @@ test('GET /api/admin/logs - Success retrieving filtered period logs', async () =
     body: JSON.stringify({ globalStartDay: 15 }),
   });
 
-  const { status, data } = await makeRequest(`/api/admin/logs?month=${currentMonth}&year=${currentYear}`, {
+  const startDay = 15;
+  const startDate = new Date(Date.UTC(currentYear, currentMonth - 2, startDay, 0, 0, 0, 0)).toISOString();
+  const endDate = new Date(Date.UTC(currentYear, currentMonth - 1, startDay - 1, 23, 59, 59, 999)).toISOString();
+
+  const { status, data } = await makeRequest(`/api/admin/logs?start=${startDate}&end=${endDate}`, {
     headers: { Authorization: `Bearer ${adminToken}` },
   });
 
@@ -367,7 +368,61 @@ test('GET /api/admin/logs - Success retrieving filtered period logs', async () =
   // Should find exactly 1 log (the testDateIn log)
   assert.strictEqual(data.logs.length, 1);
   assert.strictEqual(data.logs[0].employee_name, 'José Silva');
+  assert.strictEqual(data.logs[0].type, 'punch_in');
   assert.strictEqual(data.logs[0].hash_validated, 1);
+});
+
+test('POST, PUT, DELETE /api/admin/logs - CRUD operations on punch logs', async () => {
+  const punchTime = new Date().toISOString();
+  const postRes = await makeRequest('/api/admin/logs', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${adminToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      employee_id: 1,
+      timestamp: punchTime,
+      type: 'punch_out'
+    })
+  });
+
+  assert.strictEqual(postRes.status, 201);
+  assert.ok(postRes.data.id);
+  assert.strictEqual(postRes.data.employee_id, 1);
+  assert.strictEqual(postRes.data.type, 'punch_out');
+
+  const logId = postRes.data.id;
+
+  const updatedTime = new Date(Date.now() - 3600000).toISOString();
+  const putRes = await makeRequest(`/api/admin/logs/${logId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${adminToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      timestamp: updatedTime,
+      type: 'punch_in'
+    })
+  });
+
+  assert.strictEqual(putRes.status, 200);
+  assert.strictEqual(putRes.data.type, 'punch_in');
+
+  const dbLog = db.prepare('SELECT * FROM logs WHERE id = ?').get(logId);
+  assert.strictEqual(dbLog.type, 'punch_in');
+
+  const deleteRes = await makeRequest(`/api/admin/logs/${logId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
+
+  assert.strictEqual(deleteRes.status, 200);
+  assert.strictEqual(deleteRes.data.success, true);
+
+  const deletedLog = db.prepare('SELECT * FROM logs WHERE id = ?').get(logId);
+  assert.strictEqual(deletedLog, undefined);
 });
 
 // ----------------------------------------------------

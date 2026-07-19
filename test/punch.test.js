@@ -179,6 +179,7 @@ test('POST /api/punch - Success with manual bypass (no token)', async () => {
   assert.ok(log);
   assert.strictEqual(log.employee_id, 1);
   assert.strictEqual(log.hash_validated, 0);
+  assert.strictEqual(log.type, 'punch_in');
 });
 
 test('POST /api/punch - Success with current 15m block token', async () => {
@@ -198,10 +199,11 @@ test('POST /api/punch - Success with current 15m block token', async () => {
   assert.strictEqual(data.hash_validated, 1);
 
   // Check database log insertion
-  const log = db.prepare('SELECT * FROM logs WHERE device_key = ? ORDER BY id DESC LIMIT 1').get('paired-device-key-active');
-  assert.ok(log);
-  assert.strictEqual(log.employee_id, 1);
-  assert.strictEqual(log.hash_validated, 1);
+  const log2 = db.prepare('SELECT * FROM logs WHERE device_key = ? ORDER BY id DESC LIMIT 1').get('paired-device-key-active');
+  assert.ok(log2);
+  assert.strictEqual(log2.employee_id, 1);
+  assert.strictEqual(log2.hash_validated, 1);
+  assert.strictEqual(log2.type, 'punch_out');
 });
 
 test('POST /api/punch - Success with previous 15m block token (grace period)', async () => {

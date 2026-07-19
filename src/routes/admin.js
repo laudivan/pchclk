@@ -173,40 +173,175 @@ router.post('/employees/:id/authorize', adminAuth, (req, res) => {
   }
 });
 
-// GET /api/admin/logs - Get log report based on frequency custom period
+// GET /api/admin/logs - Get log report with date filters and employee filter
 router.get('/logs', adminAuth, (req, res) => {
-  const { month, year } = req.query;
-  const selectedYear = parseInt(year || new Date().getFullYear(), 10);
-  const selectedMonth = parseInt(month || (new Date().getMonth() + 1), 10);
+  const { start, end, employee_id } = req.query;
 
   try {
-    const startDay = config.globalStartDay;
-    
-    // Period start date: previous month (selectedMonth - 2) on startDay at UTC midnight
-    const startDate = new Date(Date.UTC(selectedYear, selectedMonth - 2, startDay, 0, 0, 0, 0));
-    // Period end date: current month (selectedMonth - 1) on startDay - 1 at UTC 23:59:59.999
-    const endDate = new Date(Date.UTC(selectedYear, selectedMonth - 1, startDay - 1, 23, 59, 59, 999));
+    let startDateStr;
+    let endDateStr;
 
-    const startDateStr = startDate.toISOString();
-    const endDateStr = endDate.toISOString();
+    if (start && end) {
+      startDateStr = new Date(start).toISOString();
+      endDateStr = new Date(end).toISOString();
+    } else {
+      // Default to current periodic evaluation based on globalStartDay
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1; // 1-12
+      const startDay = config.globalStartDay;
+      const startDate = new Date(Date.UTC(year, month - 2, startDay, 0, 0, 0, 0));
+      const endDate = new Date(Date.UTC(year, month - 1, startDay - 1, 23, 59, 59, 999));
+      startDateStr = startDate.toISOString();
+      endDateStr = endDate.toISOString();
+    }
 
-    const logs = db.prepare(`
-      SELECT l.id, l.timestamp, l.device_key, l.hash_validated, l.ip_address, l.user_agent,
-             e.name as employee_name, e.registration_number
+    let query = `
+      SELECT l.id, l.timestamp, l.device_key, l.type, l.hash_validated, l.ip_address, l.user_agent,
+             e.name as employee_name, e.registration_number, l.employee_id
       FROM logs l
       JOIN employees e ON l.employee_id = e.id
       WHERE l.timestamp >= ? AND l.timestamp <= ?
-      ORDER BY l.timestamp DESC
-    `).all(startDateStr, endDateStr);
+    `;
+    const params = [startDateStr, endDateStr];
+
+    if (employee_id) {
+      query += ` AND l.employee_id = ?`;
+      params.push(parseInt(employee_id, 10));
+    }
+
+    query += ` ORDER BY l.timestamp DESC`;
+
+    const logs = db.prepare(query).all(...params);
 
     res.json({
       period: {
         start: startDateStr,
         end: endDateStr,
-        startDay
+        startDay: config.globalStartDay
       },
       logs
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/admin/logs - Create manual punch log
+router.post('/logs', adminAuth, (req, res) => {
+  const { employee_id, timestamp, type } = req.body;
+
+  if (!employee_id || !timestamp || !type) {
+    return res.status(400).json({ error: 'Employee ID, timestamp, and type required' });
+  }
+
+  if (type !== 'punch_in' && type !== 'punch_out') {
+    return res.status(400).json({ error: 'Type must be punch_in or punch_out' });
+  }
+
+  try {
+    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const isoTimestamp = new Date(timestamp).toISOString();
+    const result = db.prepare(`
+      INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(employee_id, isoTimestamp, 'manual_admin', type, 0);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id,
+      'INSERT_LOG',
+      '/api/admin/logs',
+      result.changes,
+      JSON.stringify({ employee_id, timestamp: isoTimestamp, type })
+    );
+
+    res.status(201).json({
+      id: result.lastInsertRowid,
+      employee_id,
+      timestamp: isoTimestamp,
+      type,
+      device_key: 'manual_admin',
+      hash_validated: 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/admin/logs/:id - Update punch log timestamp and type
+router.put('/logs/:id', adminAuth, (req, res) => {
+  const logId = req.params.id;
+  const { timestamp, type } = req.body;
+
+  if (!timestamp || !type) {
+    return res.status(400).json({ error: 'Timestamp and type required' });
+  }
+
+  if (type !== 'punch_in' && type !== 'punch_out') {
+    return res.status(400).json({ error: 'Type must be punch_in or punch_out' });
+  }
+
+  try {
+    const log = db.prepare('SELECT * FROM logs WHERE id = ?').get(logId);
+    if (!log) {
+      return res.status(404).json({ error: 'Log entry not found' });
+    }
+
+    const isoTimestamp = new Date(timestamp).toISOString();
+    const result = db.prepare('UPDATE logs SET timestamp = ?, type = ? WHERE id = ?')
+      .run(isoTimestamp, type, logId);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id,
+      'UPDATE_LOG',
+      `/api/admin/logs/${logId}`,
+      result.changes,
+      JSON.stringify({ logId, timestamp: isoTimestamp, type })
+    );
+
+    res.json({ id: parseInt(logId, 10), timestamp: isoTimestamp, type });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/admin/logs/:id - Delete punch log
+router.delete('/logs/:id', adminAuth, (req, res) => {
+  const logId = req.params.id;
+
+  try {
+    const log = db.prepare('SELECT * FROM logs WHERE id = ?').get(logId);
+    if (!log) {
+      return res.status(404).json({ error: 'Log entry not found' });
+    }
+
+    const result = db.prepare('DELETE FROM logs WHERE id = ?').run(logId);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id,
+      'DELETE_LOG',
+      `/api/admin/logs/${logId}`,
+      result.changes,
+      JSON.stringify({ logId, employee_id: log.employee_id, timestamp: log.timestamp })
+    );
+
+    res.json({ success: true, id: parseInt(logId, 10) });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

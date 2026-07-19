@@ -202,13 +202,11 @@
               </div>
               
               <!-- Filter Controls -->
-              <div class="d-flex gap-2">
-                <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small">
-                  <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
-                </select>
-                <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small">
-                  <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
-                </select>
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">From:</span>
+                <input type="date" v-model="filterStartDate" class="form-control bg-dark border-glass text-white py-2 px-3 small" />
+                <span class="text-muted small">To:</span>
+                <input type="date" v-model="filterEndDate" class="form-control bg-dark border-glass text-white py-2 px-3 small" />
                 <button @click="fetchLogs" class="btn btn-primary btn-sm px-3 py-2">
                   <i class="bi bi-filter"></i> Filter
                 </button>
@@ -243,6 +241,7 @@
                     <th>EMPLOYEE</th>
                     <th>REGISTRATION</th>
                     <th>PUNCH DATE & TIME</th>
+                    <th>TYPE</th>
                     <th>VERIFICATION</th>
                     <th>IP ADDRESS</th>
                   </tr>
@@ -253,8 +252,19 @@
                     <td><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ log.registration_number }}</code></td>
                     <td class="small">{{ formatTimestamp(log.timestamp) }}</td>
                     <td>
+                      <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
+                      </span>
+                      <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1">
+                        <i class="bi bi-box-arrow-left me-1"></i> Punch Out
+                      </span>
+                    </td>
+                    <td>
                       <span v-if="log.hash_validated === 1" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25">
                         <i class="bi bi-qr-code"></i> Dynamic QR Verified
+                      </span>
+                      <span v-else-if="log.device_key === 'manual_admin'" class="badge-status badge-inactive bg-warning bg-opacity-15 text-warning border-warning border-opacity-25">
+                        <i class="bi bi-pencil-fill"></i> Manual Admin
                       </span>
                       <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25">
                         <i class="bi bi-exclamation-octagon-fill"></i> Manual Bypass
@@ -514,16 +524,47 @@
           </div>
           <div class="modal-body p-4">
             <!-- Filter Controls -->
-            <div class="d-flex gap-2 mb-4 justify-content-end">
-              <select v-model="freqMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
-                <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
-              </select>
-              <select v-model="freqYear" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
-                <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
-              </select>
-              <button @click="fetchEmployeeLogs" class="btn btn-primary btn-sm px-3">
-                <i class="bi bi-filter"></i> Filter
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+              <button @click="showAddPunchForm = !showAddPunchForm" class="btn btn-sm btn-outline-success d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle-fill"></i> Add Punch
               </button>
+              
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">From:</span>
+                <input type="date" v-model="freqStartDate" class="form-control bg-dark border-glass text-white py-1 px-2 small" style="width: auto;" />
+                <span class="text-muted small">To:</span>
+                <input type="date" v-model="freqEndDate" class="form-control bg-dark border-glass text-white py-1 px-2 small" style="width: auto;" />
+                <button @click="fetchEmployeeLogs" class="btn btn-primary btn-sm px-3 py-1">
+                  <i class="bi bi-filter"></i> Filter
+                </button>
+              </div>
+            </div>
+
+            <!-- Add manual punch section -->
+            <div v-if="showAddPunchForm" class="glass-panel p-3 mb-4 text-start border border-success border-opacity-20">
+              <h6 class="text-white fw-bold mb-3 small"><i class="bi bi-plus-circle me-1"></i>Add Manual Punch</h6>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label class="form-label text-muted small fw-bold mb-1" style="font-size: 0.65rem;">DATE</label>
+                  <input type="date" v-model="newPunchDate" class="form-control form-control-sm bg-dark border-glass text-white" required />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label text-muted small fw-bold mb-1" style="font-size: 0.65rem;">TIME</label>
+                  <input type="time" v-model="newPunchTime" class="form-control form-control-sm bg-dark border-glass text-white" step="1" required />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label text-muted small fw-bold mb-1" style="font-size: 0.65rem;">TYPE</label>
+                  <select v-model="newPunchType" class="form-select form-select-sm bg-dark border-glass text-white" required>
+                    <option value="punch_in">Punch In</option>
+                    <option value="punch_out">Punch Out</option>
+                  </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-1">
+                  <button @click="submitAddPunch" class="btn btn-primary btn-sm w-100 py-1 font-semibold">Save</button>
+                  <button @click="showAddPunchForm = false" class="btn btn-outline-secondary btn-sm py-1"><i class="bi bi-x"></i></button>
+                </div>
+              </div>
+              <div v-if="addPunchError" class="text-danger small mt-2" style="font-size: 0.75rem;">{{ addPunchError }}</div>
             </div>
 
             <!-- Loader -->
@@ -531,31 +572,69 @@
               <div class="spinner-border text-primary" role="status"></div>
             </div>
 
-            <!-- Punch Records Table -->
-            <div v-else-if="freqLogs.length > 0" class="table-responsive" style="max-height: 350px; overflow-y: auto;">
-              <table class="table custom-table text-white mb-0">
-                <thead>
-                  <tr>
-                    <th>DATE & TIME</th>
-                    <th>VERIFICATION</th>
-                    <th>IP ADDRESS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="log in freqLogs" :key="log.id">
-                    <td class="small">{{ formatTimestamp(log.timestamp) }}</td>
-                    <td>
-                      <span v-if="log.hash_validated === 1" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25">
-                        <i class="bi bi-qr-code"></i> Dynamic QR Verified
-                      </span>
-                      <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25">
-                        <i class="bi bi-exclamation-octagon-fill"></i> Manual Bypass
-                      </span>
-                    </td>
-                    <td><code class="text-white-50 bg-dark px-2 py-1 rounded small">{{ log.ip_address || 'Unknown' }}</code></td>
-                  </tr>
-                </tbody>
-              </table>
+            <!-- Grouped Punch Records list -->
+            <div v-else-if="Object.keys(groupedFreqLogs).length > 0" style="max-height: 400px; overflow-y: auto; text-align: left;">
+              <div v-for="(dayLogs, dayStr) in groupedFreqLogs" :key="dayStr" class="mb-4">
+                <h6 class="text-primary fw-bold mb-2 border-bottom border-glass pb-1" style="font-size: 0.85rem;">{{ dayStr }}</h6>
+                <table class="table custom-table text-white mb-0">
+                  <tbody>
+                    <tr v-for="log in dayLogs" :key="log.id">
+                      <!-- Non-editing Mode -->
+                      <template v-if="editingLogId !== log.id">
+                        <td style="width: 25%;" class="align-middle">
+                          <span class="small font-monospace text-white-50">{{ formatLocalTime(log.timestamp) }}</span>
+                        </td>
+                        <td style="width: 30%;" class="align-middle">
+                          <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1 small">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
+                          </span>
+                          <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1 small">
+                            <i class="bi bi-box-arrow-left me-1"></i> Punch Out
+                          </span>
+                        </td>
+                        <td style="width: 25%;" class="align-middle small text-muted">
+                          <span v-if="log.device_key === 'manual_admin'" class="text-warning">Manual Admin</span>
+                          <span v-else-if="log.hash_validated === 1">QR Code</span>
+                          <span v-else>Manual Bypass</span>
+                        </td>
+                        <td style="width: 20%;" class="align-middle text-end">
+                          <div class="d-inline-flex gap-1">
+                            <button @click="startEditLog(log)" class="btn btn-outline-warning btn-sm p-1" title="Edit Entry" style="line-height: 1;">
+                              <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
+                            </button>
+                            <button @click="deleteLog(log.id)" class="btn btn-outline-danger btn-sm p-1" title="Delete Entry" style="line-height: 1;">
+                              <i class="bi bi-trash" style="font-size: 0.8rem;"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </template>
+
+                      <!-- Inline Editing Mode -->
+                      <template v-else>
+                        <td style="width: 40%;" class="align-middle">
+                          <input type="time" v-model="editLogTime" class="form-control form-control-sm bg-dark border-glass text-white font-monospace" step="1" required />
+                        </td>
+                        <td style="width: 30%;" class="align-middle">
+                          <select v-model="editLogType" class="form-select form-select-sm bg-dark border-glass text-white" required>
+                            <option value="punch_in">In</option>
+                            <option value="punch_out">Out</option>
+                          </select>
+                        </td>
+                        <td colspan="2" style="width: 30%;" class="align-middle text-end">
+                          <div class="d-inline-flex gap-1">
+                            <button @click="saveEditLog(log)" class="btn btn-success btn-sm px-2 py-1">
+                              <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button @click="editingLogId = null" class="btn btn-outline-secondary btn-sm px-2 py-1">
+                              <i class="bi bi-x-lg"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </template>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div v-else class="text-center py-5 text-muted small">
@@ -675,7 +754,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 
 export default {
   name: 'Dashboard',
@@ -723,8 +802,8 @@ export default {
     const logsLoading = ref(false);
     const logsError = ref('');
     const logPeriod = ref(null);
-    const filterMonth = ref(new Date().getMonth() + 1); // 1-12
-    const filterYear = ref(new Date().getFullYear());
+    const filterStartDate = ref('');
+    const filterEndDate = ref('');
 
     // Config state
     const configStartDay = ref(20);
@@ -736,8 +815,18 @@ export default {
     const showFreqReportModal = ref(false);
     const freqLogs = ref([]);
     const freqLoading = ref(false);
-    const freqMonth = ref(new Date().getMonth() + 1);
-    const freqYear = ref(new Date().getFullYear());
+    const freqStartDate = ref('');
+    const freqEndDate = ref('');
+    const showAddPunchForm = ref(false);
+    const newPunchDate = ref('');
+    const newPunchTime = ref('08:00:00');
+    const newPunchType = ref('punch_in');
+    const addPunchError = ref('');
+
+    // Editing individual logs
+    const editingLogId = ref(null);
+    const editLogTime = ref('');
+    const editLogType = ref('punch_in');
 
     // Administrators state
     const admins = ref([]);
@@ -1030,13 +1119,32 @@ export default {
       }
     };
 
+    const toDateInputString = (isoString) => {
+      if (!isoString) return '';
+      const d = new Date(isoString);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+
+    const formatLocalTime = (timestamp) => {
+      if (!timestamp) return '';
+      const d = new Date(timestamp);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+
     // Fetch clocking logs
     const fetchLogs = async () => {
       logsLoading.value = true;
       logsError.value = '';
 
+      let url = '/api/admin/logs';
+      if (filterStartDate.value && filterEndDate.value) {
+        url += `?start=${filterStartDate.value}&end=${filterEndDate.value}`;
+      }
+
       try {
-        const response = await fetch(`/api/admin/logs?month=${filterMonth.value}&year=${filterYear.value}`, {
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1051,6 +1159,14 @@ export default {
         const data = await response.json();
         logs.value = data.logs;
         logPeriod.value = data.period;
+
+        // Initialize date pickers if empty
+        if (!filterStartDate.value) {
+          filterStartDate.value = toDateInputString(data.period.start);
+        }
+        if (!filterEndDate.value) {
+          filterEndDate.value = toDateInputString(data.period.end);
+        }
       } catch (err) {
         logsError.value = err.message;
       } finally {
@@ -1061,16 +1177,21 @@ export default {
     // Fetch specific employee logs for individual report
     const openEmployeeFrequencyReport = (emp) => {
       activeEmployee.value = emp;
-      freqMonth.value = filterMonth.value;
-      freqYear.value = filterYear.value;
+      freqStartDate.value = toDateInputString(logPeriod.value?.start);
+      freqEndDate.value = toDateInputString(logPeriod.value?.end);
+      showAddPunchForm.value = false;
       showFreqReportModal.value = true;
       fetchEmployeeLogs();
     };
 
     const fetchEmployeeLogs = async () => {
       freqLoading.value = true;
+      let url = `/api/admin/logs?employee_id=${activeEmployee.value.id}`;
+      if (freqStartDate.value && freqEndDate.value) {
+        url += `&start=${freqStartDate.value}&end=${freqEndDate.value}`;
+      }
       try {
-        const response = await fetch(`/api/admin/logs?month=${freqMonth.value}&year=${freqYear.value}`, {
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1079,13 +1200,129 @@ export default {
 
         if (response.ok) {
           const data = await response.json();
-          // Filter logs to match only active employee
-          freqLogs.value = data.logs.filter(log => log.registration_number === activeEmployee.value.registration_number);
+          freqLogs.value = data.logs;
         }
       } catch (err) {
         console.error('Error fetching employee frequency report logs:', err);
       } finally {
         freqLoading.value = false;
+      }
+    };
+
+    // Group individual employee logs by day (sorted chronologically)
+    const groupedFreqLogs = computed(() => {
+      const groups = {};
+      freqLogs.value.forEach(log => {
+        const dateObj = new Date(log.timestamp);
+        const localDate = dateObj.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        if (!groups[localDate]) {
+          groups[localDate] = [];
+        }
+        groups[localDate].push(log);
+      });
+      // Sort day groupings chronologically
+      Object.keys(groups).forEach(day => {
+        groups[day].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      });
+      return groups;
+    });
+
+    // Add manual punch
+    const submitAddPunch = async () => {
+      addPunchError.value = '';
+      if (!newPunchDate.value || !newPunchTime.value) {
+        addPunchError.value = 'Date and time are required';
+        return;
+      }
+      try {
+        const timestamp = new Date(`${newPunchDate.value}T${newPunchTime.value}`).toISOString();
+        const response = await fetch('/api/admin/logs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${props.token}`
+          },
+          body: JSON.stringify({
+            employee_id: activeEmployee.value.id,
+            timestamp,
+            type: newPunchType.value
+          })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to add punch log');
+        }
+
+        showAddPunchForm.value = false;
+        newPunchDate.value = '';
+        newPunchTime.value = '08:00:00';
+        fetchEmployeeLogs();
+        fetchLogs();
+      } catch (err) {
+        addPunchError.value = err.message;
+      }
+    };
+
+    // Edit punch log
+    const startEditLog = (log) => {
+      editingLogId.value = log.id;
+      const d = new Date(log.timestamp);
+      const pad = (n) => String(n).padStart(2, '0');
+      editLogTime.value = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      editLogType.value = log.type;
+    };
+
+    const saveEditLog = async (log) => {
+      try {
+        const datePart = log.timestamp.split('T')[0];
+        const newLocalString = `${datePart}T${editLogTime.value}`;
+        const newTimestamp = new Date(newLocalString).toISOString();
+
+        const response = await fetch(`/api/admin/logs/${log.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${props.token}`
+          },
+          body: JSON.stringify({
+            timestamp: newTimestamp,
+            type: editLogType.value
+          })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to update punch log');
+        }
+
+        editingLogId.value = null;
+        fetchEmployeeLogs();
+        fetchLogs();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    const deleteLog = async (logId) => {
+      if (!confirm('Are you sure you want to delete this punch entry?')) return;
+      try {
+        const response = await fetch(`/api/admin/logs/${logId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${props.token}`
+          }
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to delete punch log');
+        }
+
+        fetchEmployeeLogs();
+        fetchLogs();
+      } catch (err) {
+        alert(err.message);
       }
     };
 
@@ -1294,8 +1531,8 @@ export default {
       logsLoading,
       logsError,
       logPeriod,
-      filterMonth,
-      filterYear,
+      filterStartDate,
+      filterEndDate,
       fetchLogs,
       formatTimestamp,
       formatDateRange,
@@ -1332,10 +1569,24 @@ export default {
       showFreqReportModal,
       freqLogs,
       freqLoading,
-      freqMonth,
-      freqYear,
+      freqStartDate,
+      freqEndDate,
+      showAddPunchForm,
+      newPunchDate,
+      newPunchTime,
+      newPunchType,
+      addPunchError,
+      editingLogId,
+      editLogTime,
+      editLogType,
       openEmployeeFrequencyReport,
       fetchEmployeeLogs,
+      groupedFreqLogs,
+      submitAddPunch,
+      startEditLog,
+      saveEditLog,
+      deleteLog,
+      formatLocalTime,
 
       // Administrators exports
       admins,

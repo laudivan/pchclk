@@ -12,9 +12,44 @@ export function runMigrations() {
     const schemaPath = path.resolve(__dirname, 'schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
-    // Run schema commands inside a transaction
+    // Run migrations inside a transaction
     db.transaction(() => {
+      // Run base schema
       db.exec(schemaSql);
+
+      // Ensure migrations tracking table exists
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS _migrations (
+          name TEXT PRIMARY KEY,
+          run_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        );
+      `);
+
+      // Scan and apply migrations
+      const migrationsDir = path.resolve(__dirname, 'migrations');
+      if (fs.existsSync(migrationsDir)) {
+        const files = fs.readdirSync(migrationsDir)
+          .filter(f => f.endsWith('.sql'))
+          .sort();
+
+        for (const file of files) {
+          const alreadyRun = db.prepare('SELECT 1 FROM _migrations WHERE name = ?').get(file);
+          if (!alreadyRun) {
+            console.log(`Applying migration: ${file}`);
+            const migrationSql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+            try {
+              db.exec(migrationSql);
+            } catch (err) {
+              if (err.message.includes('duplicate column name')) {
+                console.log(`Column already exists. Marking migration ${file} as applied.`);
+              } else {
+                throw err;
+              }
+            }
+            db.prepare('INSERT INTO _migrations (name) VALUES (?)').run(file);
+          }
+        }
+      }
     })();
 
     console.log('Database migrations completed successfully.');

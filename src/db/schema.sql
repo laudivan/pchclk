@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS logs (
     employee_id INTEGER NOT NULL,
     timestamp TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     device_key TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'punch_in',
     hash_validated INTEGER NOT NULL DEFAULT 1, -- 1 = validated QR hash, 0 = direct/bypass
     ip_address TEXT,
     user_agent TEXT,

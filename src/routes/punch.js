@@ -52,15 +52,18 @@ router.post('/', (req, res) => {
       }
     }
 
-    // 3. Register punch log entry
+    // 3. Register punch log entry (auto-determine punch_in/punch_out type)
+    const lastLog = db.prepare('SELECT type FROM logs WHERE employee_id = ? ORDER BY timestamp DESC, id DESC LIMIT 1').get(auth.emp_id);
+    const type = (!lastLog || lastLog.type === 'punch_out') ? 'punch_in' : 'punch_out';
+
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     const nowIso = new Date().toISOString();
 
     db.prepare(`
-      INSERT INTO logs (employee_id, timestamp, device_key, hash_validated, ip_address, user_agent)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(auth.emp_id, nowIso, device_key, hash_validated, ip, userAgent);
+      INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(auth.emp_id, nowIso, device_key, type, hash_validated, ip, userAgent);
 
     res.json({
       success: true,
