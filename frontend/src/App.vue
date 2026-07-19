@@ -1,7 +1,12 @@
 <template>
   <div class="app-container">
-    <AdminLogin v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
-    <Dashboard v-else :token="authToken" :admin="adminData" @logout="handleLogout" />
+    <template v-if="currentView === 'tv'">
+      <SmartTV />
+    </template>
+    <template v-else>
+      <AdminLogin v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
+      <Dashboard v-else :token="authToken" :admin="adminData" @logout="handleLogout" />
+    </template>
   </div>
 </template>
 
@@ -9,14 +14,17 @@
 import { ref, onMounted } from 'vue';
 import AdminLogin from './components/AdminLogin.vue';
 import Dashboard from './components/Dashboard.vue';
+import SmartTV from './components/SmartTV.vue';
 
 export default {
   name: 'App',
   components: {
     AdminLogin,
-    Dashboard
+    Dashboard,
+    SmartTV
   },
   setup() {
+    const currentView = ref('admin'); // 'admin' or 'tv'
     const isLoggedIn = ref(false);
     const authToken = ref('');
     const adminData = ref(null);
@@ -43,6 +51,12 @@ export default {
     };
 
     onMounted(() => {
+      // Basic routing detection for Smart TV
+      if (window.location.pathname === '/pchclk') {
+        currentView.value = 'tv';
+        return;
+      }
+
       const storedToken = localStorage.getItem('pchclk_token');
       const storedAdmin = localStorage.getItem('pchclk_admin');
       
@@ -54,6 +68,7 @@ export default {
     });
 
     return {
+      currentView,
       isLoggedIn,
       authToken,
       adminData,
