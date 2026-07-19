@@ -255,3 +255,44 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #323545;
 }
+
+/* Disabled Form Controls Contrast Override */
+.form-control:disabled, .form-select:disabled {
+  background-color: rgba(10, 12, 18, 0.65) !important;
+  color: #e5e7eb !important; /* High contrast white-gray */
+  border-color: rgba(255, 255, 255, 0.04) !important;
+  opacity: 0.85 !important;
+  cursor: not-allowed;
+  text-shadow: none;
+}
+
+/* Floating Action Button (FAB) */
+.fab-btn {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8c62ff 0%, #703bf5 100%);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(140, 98, 255, 0.45);
+  z-index: 1000;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1.75rem;
+}
+
+.fab-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(140, 98, 255, 0.65);
+  background: linear-gradient(135deg, #9a75ff 0%, #7e4dff 100%);
+  color: white;
+}
+
+.fab-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
