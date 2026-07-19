@@ -315,6 +315,32 @@ test('POST /api/admin/employees/:id/authorize - Success (generates code and audi
   assert.strictEqual(log.endpoint, '/api/admin/employees/1/authorize');
 });
 
+test('POST /api/admin/employees/:id/unpair - Success unpairing device', async () => {
+  db.prepare(`
+    UPDATE device_authorizations 
+    SET device_key = 'test-unpair-device-key', is_active = 1, paired_at = '2026-07-19T12:00:00Z'
+    WHERE employee_id = 1 AND is_active = 1
+  `).run();
+
+  const { status, data } = await makeRequest('/api/admin/employees/1/unpair', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  assert.strictEqual(status, 200);
+  assert.strictEqual(data.success, true);
+  assert.strictEqual(data.employeeId, 1);
+
+  const auth = db.prepare('SELECT * FROM device_authorizations WHERE employee_id = 1').get();
+  assert.strictEqual(auth.is_active, 0);
+  assert.strictEqual(auth.device_key, null);
+  assert.strictEqual(auth.paired_at, null);
+
+  const audit = db.prepare("SELECT * FROM audit_logs WHERE action = 'UNPAIR_DEVICE' ORDER BY id DESC LIMIT 1").get();
+  assert.ok(audit);
+  assert.strictEqual(audit.endpoint, '/api/admin/employees/1/unpair');
+});
+
 // ----------------------------------------------------
 // 5. PUNCH LOGS TESTS (GET /api/admin/logs)
 // ----------------------------------------------------

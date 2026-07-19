@@ -301,3 +301,13 @@ test('GET /api/device/logs - Success retrieving logs', async () => {
   assert.ok(Array.isArray(data.logs));
   assert.ok(data.logs.length >= 1);
 });
+
+test('GET /api/device/verify - Verify device pairing status', async () => {
+  const resActive = await makeRequest(`/api/device/verify?device_key=${newlyPairedDeviceKey}`);
+  assert.strictEqual(resActive.status, 200);
+  assert.strictEqual(resActive.data.paired, true);
+
+  const resInvalid = await makeRequest('/api/device/verify?device_key=non-existent-device-key-999');
+  assert.strictEqual(resInvalid.status, 200);
+  assert.strictEqual(resInvalid.data.paired, false);
+});

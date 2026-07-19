@@ -63,6 +63,28 @@ router.post('/pair', (req, res) => {
   }
 });
 
+// GET /api/device/verify - Verify device key pairing status
+router.get('/verify', (req, res) => {
+  const { device_key } = req.query;
+
+  if (!device_key) {
+    return res.status(400).json({ error: 'Device key is required' });
+  }
+
+  try {
+    const auth = db.prepare(`
+      SELECT 1
+      FROM device_authorizations da
+      JOIN employees e ON da.employee_id = e.id
+      WHERE da.device_key = ? AND da.is_active = 1 AND e.status = 'active'
+    `).get(device_key);
+
+    res.json({ paired: !!auth });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/device/logs - Fetch logs for the last 3 months for paired device
 router.get('/logs', (req, res) => {
   const { device_key } = req.query;

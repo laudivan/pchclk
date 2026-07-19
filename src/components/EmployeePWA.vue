@@ -306,7 +306,28 @@ export default {
     };
 
     // Camera HTML5-QRCode Scanner Controls
-    const openScanner = () => {
+    const openScanner = async () => {
+      // If online, check if device is still paired on the backend
+      if (!isOffline.value) {
+        try {
+          const response = await fetch(`/api/device/verify?device_key=${deviceKey.value}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.paired) {
+              deviceKey.value = '';
+              employee.value = null;
+              localStorage.removeItem('pchclk_pwa_key');
+              localStorage.removeItem('pchclk_pwa_emp');
+              localStorage.removeItem('pchclk_pwa_logs');
+              alert('This device is no longer paired. Please register again.');
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to verify pairing status online:', err);
+        }
+      }
+
       showScanner.value = true;
       
       // Allow slight UI render delay before starting camera

@@ -164,20 +164,18 @@
                         </a>
                       </td>
                       <td><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ emp.registration_number }}</code></td>
-                      <td>
-                        <span v-if="emp.is_device_active === 1" class="badge-status badge-active">
+                      <td class="text-end" style="width: 30%;">
+                        <!-- If device is paired, clicking unpairs it with confirmation -->
+                        <button v-if="emp.is_device_active === 1" @click="confirmUnpairDevice(emp)" class="btn btn-outline-success btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to Unpair Device">
                           <i class="bi bi-check-circle-fill"></i> Paired
-                        </span>
-                        <span v-else-if="emp.auth_code" class="badge-status badge-inactive bg-warning bg-opacity-15 text-warning border-warning border-opacity-25">
-                          <i class="bi bi-hourglass-split"></i> Pending Pairing
-                        </span>
-                        <span v-else class="badge-status badge-inactive">
-                          <i class="bi bi-x-circle-fill"></i> Unauthorized
-                        </span>
-                      </td>
-                      <td class="text-end">
-                        <button @click="authorizeDevice(emp)" class="btn btn-outline-primary btn-sm px-3 py-1 d-flex align-items-center gap-1" title="Get Pairing Code">
-                          <i class="bi bi-key-fill"></i> <span class="small">Pair</span>
+                        </button>
+                        <!-- If device is pending pairing, clicking shows the pairing code window -->
+                        <button v-else-if="emp.auth_code" @click="authorizeDevice(emp)" class="btn btn-outline-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to View Pairing Code">
+                          <i class="bi bi-hourglass-split"></i> Pending
+                        </button>
+                        <!-- If unauthorized, clicking opens the pairing code window -->
+                        <button v-else @click="authorizeDevice(emp)" class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to Get Pairing Code">
+                          <i class="bi bi-key-fill"></i> Pair
                         </button>
                       </td>
                     </tr>
@@ -1129,6 +1127,27 @@ export default {
       }
     };
 
+    const confirmUnpairDevice = async (emp) => {
+      if (!confirm(`Are you sure you want to unpair the device for ${emp.name}?`)) return;
+      try {
+        const response = await fetch(`/api/admin/employees/${emp.id}/unpair`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${props.token}`
+          }
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to unpair device');
+        }
+
+        fetchEmployees();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
     const copyAuthCode = async () => {
       try {
         await navigator.clipboard.writeText(authCode.value);
@@ -1542,6 +1561,7 @@ export default {
       createEmployee,
       closeAddModal,
       authorizeDevice,
+      confirmUnpairDevice,
       showAuthModal,
       selectedEmployeeName,
       authCode,

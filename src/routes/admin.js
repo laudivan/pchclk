@@ -173,6 +173,41 @@ router.post('/employees/:id/authorize', adminAuth, (req, res) => {
   }
 });
 
+// POST /api/admin/employees/:id/unpair - Unpair active device authorization
+router.post('/employees/:id/unpair', adminAuth, (req, res) => {
+  const employeeId = req.params.id;
+
+  try {
+    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Set is_active = 0, and clear keys
+    const result = db.prepare(`
+      UPDATE device_authorizations 
+      SET is_active = 0, device_key = NULL, paired_at = NULL 
+      WHERE employee_id = ? AND is_active = 1
+    `).run(employeeId);
+
+    // Audit logging
+    db.prepare(`
+      INSERT INTO audit_logs (admin_id, action, endpoint, affected_rows, details) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      req.admin.id, 
+      'UNPAIR_DEVICE', 
+      `/api/admin/employees/${employeeId}/unpair`, 
+      result.changes, 
+      JSON.stringify({ employeeId })
+    );
+
+    res.json({ success: true, employeeId: parseInt(employeeId, 10) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/admin/logs - Get log report with date filters and employee filter
 router.get('/logs', adminAuth, (req, res) => {
   const { start, end, employee_id } = req.query;
