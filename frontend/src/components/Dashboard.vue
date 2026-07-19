@@ -142,16 +142,6 @@
 
             <!-- B. DIRECTORY LIST VIEW (DEFAULT) -->
             <div v-else>
-              <div class="d-flex align-items-center justify-content-between mb-4">
-                <div>
-                  <h3 class="text-white fw-bold mb-1">Employees Directory</h3>
-                  <p class="text-muted small m-0">Click on an employee's name to manage their details or authorize device pairing.</p>
-                </div>
-                <button @click="showAddModal = true" class="btn btn-primary btn-sm d-flex align-items-center gap-2">
-                  <i class="bi bi-plus-circle-fill"></i> Add Employee
-                </button>
-              </div>
-
               <!-- Error message if any -->
               <div v-if="employeesError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ employeesError }}
@@ -166,15 +156,6 @@
               <!-- Table list -->
               <div v-else-if="employees.length > 0" class="table-responsive">
                 <table class="table custom-table text-white">
-                  <thead>
-                    <tr>
-                      <th>NAME</th>
-                      <th>REGISTRATION</th>
-                      <th>DEVICE KEY</th>
-                      <th>DEVICE STATUS</th>
-                      <th class="text-end">ACTIONS</th>
-                    </tr>
-                  </thead>
                   <tbody>
                     <tr v-for="emp in employees" :key="emp.id">
                       <td>
@@ -183,12 +164,6 @@
                         </a>
                       </td>
                       <td><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ emp.registration_number }}</code></td>
-                      <td>
-                        <span v-if="emp.device_key" class="text-white-50 small text-truncate d-inline-block" style="max-width: 130px;">
-                          {{ emp.device_key }}
-                        </span>
-                        <span v-else class="text-muted italic small">Not paired</span>
-                      </td>
                       <td>
                         <span v-if="emp.is_device_active === 1" class="badge-status badge-active">
                           <i class="bi bi-check-circle-fill"></i> Paired
@@ -201,8 +176,8 @@
                         </span>
                       </td>
                       <td class="text-end">
-                        <button @click="authorizeDevice(emp)" class="btn btn-outline-secondary btn-sm px-3 py-2">
-                          <i class="bi bi-phone-fill me-1"></i> Authorize Device
+                        <button @click="authorizeDevice(emp)" class="btn btn-outline-secondary btn-sm p-2" title="Authorize Device">
+                          <i class="bi bi-qr-code"></i>
                         </button>
                       </td>
                     </tr>
@@ -684,6 +659,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Floating Add Employee Button (FAB) -->
+    <button 
+      v-if="activeTab === 'employees' && !activeEmployee" 
+      @click="showAddModal = true" 
+      class="fab-btn" 
+      title="Add Employee"
+    >
+      <i class="bi bi-plus-lg"></i>
+    </button>
   </div>
 </template>
 
