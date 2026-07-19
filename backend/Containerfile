@@ -1,0 +1,41 @@
+# Stage 1: Build stage for native compilation
+FROM node:20-alpine AS builder
+
+# Install compile dependencies for better-sqlite3
+RUN apk add --no-cache python3 make g++ gcc
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY src/ ./src/
+RUN npm rebuild better-sqlite3
+
+# Stage 2: Minimal runtime stage
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV DB_PATH=/app/data/pchclk.db
+
+# Create persistent storage folder and set ownership for security
+RUN mkdir -p /app/data && chown -R node:node /app
+
+# Copy dependencies and source from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY src/ ./src/
+
+# Run as non-privileged system user
+USER node
+
+EXPOSE 3000
+
+# Automated healthcheck using native Node.js fetch (Node 18+)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+
+CMD ["node", "src/server.js"]
