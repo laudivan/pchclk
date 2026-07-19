@@ -106,9 +106,17 @@
                       </span>
                     </td>
                     <td class="text-end">
-                      <button @click="authorizeDevice(emp)" class="btn btn-outline-secondary btn-sm px-3 py-2">
-                        <i class="bi bi-phone-fill me-1"></i> Authorize Device
-                      </button>
+                      <div class="d-inline-flex gap-2">
+                        <button @click="editEmployee(emp)" class="btn btn-outline-warning btn-sm px-2 py-2" title="Edit Employee">
+                          <i class="bi bi-pencil-fill"></i>
+                        </button>
+                        <button @click="confirmDeleteEmployee(emp)" class="btn btn-outline-danger btn-sm px-2 py-2" title="Remove Employee">
+                          <i class="bi bi-trash-fill"></i>
+                        </button>
+                        <button @click="authorizeDevice(emp)" class="btn btn-outline-secondary btn-sm px-3 py-2">
+                          <i class="bi bi-phone-fill me-1"></i> Authorize Device
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -318,6 +326,67 @@
         </div>
       </div>
     </div>
+
+    <!-- MODAL 3: EDIT EMPLOYEE -->
+    <div v-if="showEditModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-glass">
+            <h5 class="modal-title text-white fw-bold">Edit Employee</h5>
+            <button type="button" @click="closeEditModal" class="btn-close btn-close-white" aria-label="Close"></button>
+          </div>
+          <form @submit.prevent="updateEmployee">
+            <div class="modal-body p-4 text-start">
+              <div class="mb-3">
+                <label for="editEmpName" class="form-label text-muted small fw-bold">FULL NAME</label>
+                <input v-model="editEmpName" type="text" id="editEmpName" class="form-control" required />
+              </div>
+              <div class="mb-3">
+                <label for="editEmpReg" class="form-label text-muted small fw-bold">REGISTRATION NUMBER (UNIQUE)</label>
+                <input v-model="editEmpReg" type="text" id="editEmpReg" class="form-control" required />
+              </div>
+
+              <div v-if="editError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ editError }}
+              </div>
+            </div>
+            <div class="modal-footer border-glass">
+              <button type="button" @click="closeEditModal" class="btn btn-outline-secondary px-4">Cancel</button>
+              <button type="submit" class="btn btn-primary px-4" :disabled="editLoading">
+                <span v-if="editLoading" class="spinner-border spinner-border-sm me-2"></span>
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: CONFIRM DELETE -->
+    <div v-if="showDeleteModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-glass">
+            <h5 class="modal-title text-white fw-bold">Remove Employee</h5>
+            <button type="button" @click="showDeleteModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-start">
+            <p class="text-white-50">Are you sure you want to remove <strong>{{ employeeToDelete?.name }}</strong> (Registration: <code>{{ employeeToDelete?.registration_number }}</code>)?</p>
+            <p class="text-danger small bg-danger bg-opacity-10 py-2 px-3 rounded border border-danger border-opacity-15 mb-0">
+              <i class="bi bi-exclamation-octagon-fill me-1"></i>
+              Warning: This action is permanent and will delete all paired device authorizations and punch records for this employee.
+            </p>
+          </div>
+          <div class="modal-footer border-glass">
+            <button type="button" @click="showDeleteModal = false" class="btn btn-outline-secondary px-4">Cancel</button>
+            <button type="button" @click="deleteEmployee" class="btn btn-danger px-4" :disabled="deleteLoading">
+              <span v-if="deleteLoading" class="spinner-border spinner-border-sm me-2"></span>
+              Remove Employee
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -349,6 +418,19 @@ export default {
     const newEmpReg = ref('');
     const addLoading = ref(false);
     const addError = ref('');
+
+    // Edit Employee state
+    const showEditModal = ref(false);
+    const selectedEmployeeId = ref(null);
+    const editEmpName = ref('');
+    const editEmpReg = ref('');
+    const editLoading = ref(false);
+    const editError = ref('');
+
+    // Delete Employee state
+    const showDeleteModal = ref(false);
+    const employeeToDelete = ref(null);
+    const deleteLoading = ref(false);
 
     // Device Auth state
     const showAuthModal = ref(false);
@@ -485,6 +567,88 @@ export default {
       newEmpName.value = '';
       newEmpReg.value = '';
       addError.value = '';
+    };
+
+    // Edit Employee methods
+    const editEmployee = (emp) => {
+      selectedEmployeeId.value = emp.id;
+      editEmpName.value = emp.name;
+      editEmpReg.value = emp.registration_number;
+      editError.value = '';
+      showEditModal.value = true;
+    };
+
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      selectedEmployeeId.value = null;
+      editEmpName.value = '';
+      editEmpReg.value = '';
+      editError.value = '';
+    };
+
+    const updateEmployee = async () => {
+      editLoading.value = true;
+      editError.value = '';
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/admin/employees/${selectedEmployeeId.value}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${props.token}`,
+            'Accept-Language': navigator.language
+          },
+          body: JSON.stringify({
+            name: editEmpName.value,
+            registration_number: editEmpReg.value
+          })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to update employee profile');
+        }
+
+        closeEditModal();
+        fetchEmployees();
+      } catch (err) {
+        editError.value = err.message;
+      } finally {
+        editLoading.value = false;
+      }
+    };
+
+    // Delete Employee methods
+    const confirmDeleteEmployee = (emp) => {
+      employeeToDelete.value = emp;
+      showDeleteModal.value = true;
+    };
+
+    const deleteEmployee = async () => {
+      deleteLoading.value = true;
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/admin/employees/${employeeToDelete.value.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${props.token}`,
+            'Accept-Language': navigator.language
+          }
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to delete employee');
+        }
+
+        showDeleteModal.value = false;
+        employeeToDelete.value = null;
+        fetchEmployees();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        deleteLoading.value = false;
+      }
     };
 
     // Authorize Device code generation
@@ -630,7 +794,23 @@ export default {
       configSaving,
       configSuccessMessage,
       configError,
-      updateConfig
+      updateConfig,
+      // Edit Employee exports
+      showEditModal,
+      selectedEmployeeId,
+      editEmpName,
+      editEmpReg,
+      editLoading,
+      editError,
+      editEmployee,
+      closeEditModal,
+      updateEmployee,
+      // Delete Employee exports
+      showDeleteModal,
+      employeeToDelete,
+      deleteLoading,
+      confirmDeleteEmployee,
+      deleteEmployee
     };
   }
 };
