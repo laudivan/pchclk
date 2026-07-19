@@ -183,7 +183,7 @@ export default {
       pairingError.value = '';
 
       try {
-        const response = await fetch('http://localhost:3000/api/device/pair', {
+        const response = await fetch('/api/device/pair', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ auth_code: inputAuthCode.value })
@@ -224,7 +224,7 @@ export default {
       }
 
       try {
-        const response = await fetch(`http://localhost:3000/api/device/logs?device_key=${deviceKey.value}`);
+        const response = await fetch(`/api/device/logs?device_key=${deviceKey.value}`);
         if (response.ok) {
           const data = await response.json();
           logs.value = data.logs;
@@ -254,7 +254,7 @@ export default {
       }
 
       try {
-        const response = await fetch('http://localhost:3000/api/punch', {
+        const response = await fetch('/api/punch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -282,7 +282,7 @@ export default {
 
       for (const punch of queueCopy) {
         try {
-          const response = await fetch('http://localhost:3000/api/punch', {
+          const response = await fetch('/api/punch', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

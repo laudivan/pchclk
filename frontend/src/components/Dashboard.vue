@@ -773,7 +773,7 @@ export default {
     // Fetch config
     const fetchConfig = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/admin/config', {
+        const response = await fetch('/api/admin/config', {
           headers: {
             'Authorization': `Bearer ${props.token}`
           }
@@ -794,7 +794,7 @@ export default {
       configError.value = '';
       
       try {
-        const response = await fetch('http://localhost:3000/api/admin/config', {
+        const response = await fetch('/api/admin/config', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -825,7 +825,7 @@ export default {
       employeesError.value = '';
 
       try {
-        const response = await fetch('http://localhost:3000/api/admin/employees', {
+        const response = await fetch('/api/admin/employees', {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -852,7 +852,7 @@ export default {
       addError.value = '';
 
       try {
-        const response = await fetch('http://localhost:3000/api/admin/employees', {
+        const response = await fetch('/api/admin/employees', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -925,7 +925,7 @@ export default {
       showSaveConfirmModal.value = false;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/employees/${activeEmployee.value.id}`, {
+        const response = await fetch(`/api/admin/employees/${activeEmployee.value.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -967,7 +967,7 @@ export default {
       deleteLoading.value = true;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/employees/${employeeToDelete.value.id}`, {
+        const response = await fetch(`/api/admin/employees/${employeeToDelete.value.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${props.token}`,
@@ -994,7 +994,7 @@ export default {
     // Device Auth code generation
     const authorizeDevice = async (emp) => {
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/employees/${emp.id}/authorize`, {
+        const response = await fetch(`/api/admin/employees/${emp.id}/authorize`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${props.token}`,
@@ -1038,7 +1038,7 @@ export default {
       logsError.value = '';
 
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/logs?month=${filterMonth.value}&year=${filterYear.value}`, {
+        const response = await fetch(`/api/admin/logs?month=${filterMonth.value}&year=${filterYear.value}`, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1072,7 +1072,7 @@ export default {
     const fetchEmployeeLogs = async () => {
       freqLoading.value = true;
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/logs?month=${freqMonth.value}&year=${freqYear.value}`, {
+        const response = await fetch(`/api/admin/logs?month=${freqMonth.value}&year=${freqYear.value}`, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1097,7 +1097,7 @@ export default {
       adminsError.value = '';
 
       try {
-        const response = await fetch('http://localhost:3000/api/admin/admins', {
+        const response = await fetch('/api/admin/admins', {
           headers: {
             'Authorization': `Bearer ${props.token}`
           }
@@ -1157,8 +1157,8 @@ export default {
       showAdminSaveConfirmModal.value = false;
 
       const url = isEditingAdmin.value 
-        ? `http://localhost:3000/api/admin/admins/${selectedAdminId.value}`
-        : 'http://localhost:3000/api/admin/admins';
+        ? `/api/admin/admins/${selectedAdminId.value}`
+        : '/api/admin/admins';
       
       const method = isEditingAdmin.value ? 'PUT' : 'POST';
 
@@ -1206,7 +1206,7 @@ export default {
       adminDeleteSaving.value = true;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/admins/${adminToDelete.value.id}`, {
+        const response = await fetch(`/api/admin/admins/${adminToDelete.value.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${props.token}`

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  pchclk:
+    build:
+      context: .
+      dockerfile: backend/Containerfile
+    container_name: pchclk_production
+    ports:
+      # Expose port 3000 of the container to port 3000 on all host network interfaces.
+      # This allows other devices on your local network (LAN) to connect via:
+      # http://<YOUR-HOST-IP-ADDRESS>:3000
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/data/pchclk.db
+      # IMPORTANT: Replace this with a secure random key in your production environment
+      - JWT_SECRET=production-secure-override-please-change-in-env-998877
+      - GLOBAL_START_DAY=20
+    volumes:
+      # Persistent storage volume for SQLite database
+      - pchclk_prod_db:/app/data
+    restart: always
+
+volumes:
+  pchclk_prod_db:
+    driver: local

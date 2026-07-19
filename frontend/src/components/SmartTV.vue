@@ -101,7 +101,7 @@ export default {
     // Fetches rotating validation token from public endpoint
     const fetchToken = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/tv/token');
+        const response = await fetch('/api/tv/token');
         if (!response.ok) throw new Error('API unreachable');
         
         const data = await response.json();
