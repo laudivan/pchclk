@@ -1,19 +1,18 @@
-# Stage 1: Build stage for native compilation
+# Stage 1: Build stage
 FROM node:20-alpine AS builder
-
-# Install compile dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++ gcc
 
 WORKDIR /app
 
+# Pre-create the data directory and set permissions for distroless nonroot user (uid: 65532)
+RUN mkdir -p data && chown -R 65532:65532 data
+
 COPY package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 
 COPY src/ ./src/
-RUN npm rebuild better-sqlite3
 
-# Stage 2: Minimal runtime stage
-FROM node:20-alpine AS runner
+# Stage 2: Minimal runtime stage using Google Distroless Node.js
+FROM gcr.io/distroless/nodejs20-debian12 AS runner
 
 WORKDIR /app
 
@@ -21,21 +20,19 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV DB_PATH=/app/data/pchclk.db
 
-# Create persistent storage folder and set ownership for security
-RUN mkdir -p /app/data && chown -R node:node /app
+# Copy pre-created data directory and source files from builder with correct nonroot ownership
+COPY --from=builder --chown=nonroot:nonroot /app/data ./data
+COPY --from=builder --chown=nonroot:nonroot /app/node_modules ./node_modules
+COPY --from=builder --chown=nonroot:nonroot /app/package*.json ./
+COPY --from=builder --chown=nonroot:nonroot /app/src ./src
 
-# Copy dependencies and source from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-COPY src/ ./src/
-
-# Run as non-privileged system user
-USER node
+# Run as non-privileged system user (distroless nonroot user is uid 65532)
+USER nonroot
 
 EXPOSE 3000
 
-# Automated healthcheck using native Node.js fetch (Node 18+)
+# Automated healthcheck using native Node.js fetch inside distroless (no shell format)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+  CMD ["/nodejs/bin/node", "-e", "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
 
-CMD ["node", "src/server.js"]
+CMD ["src/server.js"]
