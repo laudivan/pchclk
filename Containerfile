@@ -1,5 +1,5 @@
 # Stage 1: Build Frontend SPA
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Build Backend dependencies
-FROM node:20-alpine AS backend-builder
+FROM node:22-alpine AS backend-builder
 WORKDIR /app
 RUN mkdir -p data && chown -R 65532:65532 data
 COPY backend/package*.json ./
@@ -15,7 +15,7 @@ RUN npm ci --omit=dev
 COPY backend/src ./src
 
 # Stage 3: Runner
-FROM gcr.io/distroless/nodejs20-debian12 AS runner
+FROM gcr.io/distroless/nodejs22-debian12 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
