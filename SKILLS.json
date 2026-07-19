@@ -11,6 +11,7 @@
     "Bootstrap 5",
     "i18n (Internationalization)",
     "Rootless Podman & Podman Compose",
-    "PWA Local Caching & Service Workers"
+    "PWA Local Caching & Service Workers",
+    "Git & Version Control (Conventional Commits, Branching Strategy)"
   ]
 }

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Containerfile
+    container_name: pchclk_backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/data/pchclk.db
+      - JWT_SECRET=production-secret-override-please-change-in-env
+      - GLOBAL_START_DAY=20
+    volumes:
+      - pchclk_db_data:/app/data
+    restart: always
+
+volumes:
+  pchclk_db_data:
+    driver: local
