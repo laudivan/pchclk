@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { i18n } from './middleware/i18n.js';
 import db from './config/db.js';
 import adminRouter from './routes/admin.js';
+import punchRouter from './routes/punch.js';
 
 const app = express();
 
@@ -18,6 +19,9 @@ app.use(i18n);
 
 // Mount admin routes
 app.use('/api/admin', adminRouter);
+
+// Mount public punch routes
+app.use('/api/punch', punchRouter);
 
 // Public TV Token rotation endpoint (HMAC-SHA256 based on 15m intervals)
 app.get('/api/tv/token', (req, res) => {
