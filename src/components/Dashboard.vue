@@ -389,7 +389,7 @@
           <!-- 4. EXPORT TAB -->
           <div v-if="activeTab === 'export'" class="glass-panel p-4 h-100">
             <h3 class="text-white fw-bold mb-1">Export Periodic Report</h3>
-            <p class="text-muted small mb-4">Download a multi-sheet Excel spreadsheet containing punch records for all employees during the selected period.</p>
+            <p class="text-muted small mb-4">Download a multi-sheet ODS spreadsheet containing punch records for all employees during the selected period.</p>
 
             <div class="col-md-7">
               <div class="card bg-dark bg-opacity-25 border-glass p-4 rounded-3 mb-4">
@@ -419,7 +419,7 @@
               <button @click="downloadExcelReport" class="btn btn-primary w-100 py-3 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" :disabled="exportLoading">
                 <span v-if="exportLoading" class="spinner-border spinner-border-sm" role="status"></span>
                 <i v-else class="bi bi-download fs-5"></i>
-                Download Excel Report
+                Download ODS Report
               </button>
             </div>
           </div>
@@ -853,6 +853,7 @@
 
 <script>
 import { ref, onMounted, watch, computed } from 'vue';
+import * as XLSX from 'xlsx';
 
 export default {
   name: 'Dashboard',
@@ -1349,31 +1350,8 @@ export default {
         }
         const employeesList = await empResponse.json();
 
-        // 3. Generate XML Spreadsheet 2003 content
-        let xml = `<?xml version="1.0" encoding="utf-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
-  <Styles>
-    <Style ss:Id="Default" ss:Name="Normal">
-      <Alignment ss:Vertical="Bottom"/>
-      <Borders/>
-      <Font ss:FontName="Calibri" x:CharSet="1" x:Family="Swiss" ss:Size="11" ss:Color="#000000"/>
-      <Interior/>
-      <NumberFormat/>
-      <Protection/>
-    </Style>
-    <Style ss:Id="Bold">
-      <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Bold="1" ss:Color="#000000"/>
-    </Style>
-    <Style ss:Id="Header">
-      <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
-      <Interior ss:Color="#1F4E78" ss:Pattern="Solid"/>
-    </Style>
-  </Styles>`;
+        // 3. Create ODS Workbook using SheetJS (XLSX)
+        const wb = XLSX.utils.book_new();
 
         // For each employee, create a separate sheet
         for (const emp of employeesList) {
@@ -1405,63 +1383,40 @@ export default {
             }
           }
 
-          // Sanitise Sheet Name (max 31 chars, no invalid chars)
-          const cleanSheetName = emp.name.replace(/[\\\\/?*\\[\\]]/g, '').substring(0, 30) || `Employee_${emp.id}`;
-
           const periodName = `${getMonthName(exportMonth.value)} ${exportYear.value}`;
           const periodString = `${new Date(periodStart).toLocaleDateString(navigator.language)} to ${new Date(periodEnd).toLocaleDateString(navigator.language)} (${periodName})`;
 
-          xml += `
-  <Worksheet ss:Name="${cleanSheetName}">
-    <Table>
-      <Column ss:Width="120"/>
-      <Column ss:Width="120"/>
-      <Column ss:Width="120"/>
-      <Column ss:Width="120"/>
-      <Row>
-        <Cell ss:StyleID="Bold"><Data ss:Type="String">Registration:</Data></Cell>
-        <Cell><Data ss:Type="String">${emp.registration_number}</Data></Cell>
-      </Row>
-      <Row>
-        <Cell ss:StyleID="Bold"><Data ss:Type="String">Employee Name:</Data></Cell>
-        <Cell><Data ss:Type="String">${emp.name}</Data></Cell>
-      </Row>
-      <Row>
-        <Cell ss:StyleID="Bold"><Data ss:Type="String">Period:</Data></Cell>
-        <Cell><Data ss:Type="String">${periodString}</Data></Cell>
-      </Row>
-      <Row/>
-      <Row ss:StyleID="Header">
-        <Cell><Data ss:Type="String">Date</Data></Cell>
-        <Cell><Data ss:Type="String">Punch In</Data></Cell>
-        <Cell><Data ss:Type="String">Punch Out</Data></Cell>
-        <Cell><Data ss:Type="String">Worked Hours</Data></Cell>
-      </Row>`;
+          // Setup ODS array of arrays representation
+          const wsData = [
+            ["Registration:", emp.registration_number],
+            ["Employee Name:", emp.name],
+            ["Period:", periodString],
+            [], // Empty row
+            ["Date", "Punch In", "Punch Out", "Worked Hours"]
+          ];
 
           for (const r of rows) {
-            xml += `
-      <Row>
-        <Cell><Data ss:Type="String">${r.date}</Data></Cell>
-        <Cell><Data ss:Type="String">${r.punchIn}</Data></Cell>
-        <Cell><Data ss:Type="String">${r.punchOut}</Data></Cell>
-        <Cell><Data ss:Type="Number">${r.workedHours}</Data></Cell>
-      </Row>`;
+            wsData.push([r.date, r.punchIn, r.punchOut, r.workedHours]);
           }
 
-          xml += `
-    </Table>
-  </Worksheet>`;
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+          // Sanitise Sheet Name (max 31 chars, no invalid chars)
+          const cleanSheetName = emp.name.replace(/[\\/?*\[\]]/g, '').substring(0, 30) || `Employee_${emp.id}`;
+
+          // Append to workbook
+          XLSX.utils.book_append_sheet(wb, ws, cleanSheetName);
         }
 
-        xml += `
-</Workbook>`;
+        // Write workbook to ODS binary array
+        const wbout = XLSX.write(wb, { bookType: 'ods', type: 'array' });
 
-        // Trigger File Download
-        const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        // Trigger File Download as ODS
+        const blob = new Blob([wbout], { type: 'application/vnd.oasis.opendocument.spreadsheet' });
         const link = document.createElement('a');
         const dateStr = `${exportYear.value}_${String(exportMonth.value).padStart(2, '0')}`;
         link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', `Punch_Records_${dateStr}.xls`);
+        link.setAttribute('download', `Punch_Records_${dateStr}.ods`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
