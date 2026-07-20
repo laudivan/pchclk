@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS logs (
     device_key     TEXT    NOT NULL,
     type           TEXT    NOT NULL DEFAULT 'punch_in',
     hash_validated INTEGER NOT NULL DEFAULT 1, -- 1 = QR hash validated, 0 = bypass
+    qr_token       TEXT,
     ip_address     TEXT,
     user_agent     TEXT,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE

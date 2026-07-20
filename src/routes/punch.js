@@ -50,6 +50,12 @@ router.post('/', (req, res) => {
       } else {
         return res.status(400).json({ error: 'Invalid or expired QR code' });
       }
+
+      // Check if this token has already been used by the employee to prevent double punches
+      const duplicateToken = db.prepare('SELECT 1 FROM logs WHERE employee_id = ? AND qr_token = ?').get(auth.emp_id, token);
+      if (duplicateToken) {
+        return res.status(400).json({ error: 'This QR code has already been used for a punch' });
+      }
     }
 
     // 3. Register punch log entry (auto-determine punch_in/punch_out type)
@@ -61,9 +67,9 @@ router.post('/', (req, res) => {
     const nowIso = new Date().toISOString();
 
     db.prepare(`
-      INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated, ip_address, user_agent)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(auth.emp_id, nowIso, device_key, type, hash_validated, ip, userAgent);
+      INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated, qr_token, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(auth.emp_id, nowIso, device_key, type, hash_validated, token || null, ip, userAgent);
 
     res.json({
       success: true,

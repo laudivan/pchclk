@@ -241,9 +241,6 @@
                       <td class="align-middle fw-bold text-white" style="width: 25%;">
                         {{ log.employee_name }}
                       </td>
-                      <td class="align-middle" style="width: 30%;">
-                        <span class="small font-monospace text-white-50">{{ formatTimestamp(log.timestamp) }}</span>
-                      </td>
                       <td class="align-middle" style="width: 25%;">
                         <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1 small">
                           <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
@@ -251,6 +248,9 @@
                         <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1 small">
                           <i class="bi bi-box-arrow-left me-1"></i> Punch Out
                         </span>
+                      </td>
+                      <td class="align-middle" style="width: 30%;">
+                        <span class="small font-monospace text-white-50">{{ formatTimestamp(log.timestamp) }}</span>
                       </td>
                       <td class="align-middle text-end" style="width: 20%;">
                         <div class="d-inline-flex gap-1">
@@ -609,11 +609,6 @@
                           <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1 small">
                             <i class="bi bi-box-arrow-left me-1"></i> Punch Out
                           </span>
-                        </td>
-                        <td style="width: 25%;" class="align-middle small text-muted">
-                          <span v-if="log.device_key === 'manual_admin'" class="text-warning">Manual Admin</span>
-                          <span v-else-if="log.hash_validated === 1">QR Code</span>
-                          <span v-else>Manual Bypass</span>
                         </td>
                         <td style="width: 20%;" class="align-middle text-end">
                           <div class="d-inline-flex gap-1">

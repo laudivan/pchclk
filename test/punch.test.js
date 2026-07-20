@@ -204,6 +204,18 @@ test('POST /api/punch - Success with current 15m block token', async () => {
   assert.strictEqual(log2.employee_id, 1);
   assert.strictEqual(log2.hash_validated, 1);
   assert.strictEqual(log2.type, 'punch_out');
+  assert.strictEqual(log2.qr_token, currentToken);
+
+  // Try to double-punch using the exact same token (should fail)
+  const resDouble = await makeRequest('/api/punch', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      device_key: 'paired-device-key-active',
+      token: currentToken
+    }),
+  });
+  assert.strictEqual(resDouble.status, 400);
+  assert.strictEqual(resDouble.data.error, 'This QR code has already been used for a punch');
 });
 
 test('POST /api/punch - Success with previous 15m block token (grace period)', async () => {
