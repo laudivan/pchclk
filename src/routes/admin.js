@@ -82,8 +82,43 @@ router.post('/config', adminAuth, (req, res) => {
   res.json({ success: true, globalStartDay, changes: auditResult.changes });
 });
 
-// GET /api/admin/employees - Get employee records and active device authorizations
+// Helper to calculate UTC start and end dates based on start day period rules
+function getPeriodBoundaries(year, month, startDay) {
+  let startYear = year;
+  let startMonth = month;
+  let endYear = year;
+  let endMonth = month;
+
+  if (startDay > 15) {
+    // Starts in the previous month (month - 1) on startDay, ends in named month (month) on startDay - 1
+    startMonth = month - 1;
+    if (startMonth === 0) {
+      startMonth = 12;
+      startYear = year - 1;
+    }
+  } else {
+    // Starts in named month (month) on startDay, ends in next month (month + 1) on startDay - 1
+    endMonth = month + 1;
+    if (endMonth === 13) {
+      endMonth = 1;
+      endYear = year + 1;
+    }
+  }
+
+  // Start Date: midnight UTC
+  const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0));
+  
+  // End Date: 23:59:59.999 UTC
+  const nextStart = new Date(Date.UTC(endYear, endMonth - 1, startDay, 0, 0, 0, 0));
+  const endDate = new Date(nextStart.getTime() - 1);
+
+  return { startDate, endDate };
+}
+
+// GET /api/admin/employees - Get employee records, active authorizations, and period worked hours
 router.get('/employees', adminAuth, (req, res) => {
+  const { month, year } = req.query;
+
   try {
     const employees = db.prepare(`
       SELECT e.*, 
@@ -92,6 +127,56 @@ router.get('/employees', adminAuth, (req, res) => {
       LEFT JOIN device_authorizations da ON e.id = da.employee_id AND da.is_active = 1
       ORDER BY e.name ASC
     `).all();
+
+    // If month/year are provided, calculate worked hours for the period
+    if (month && year) {
+      const selectedYear = parseInt(year, 10);
+      const selectedMonth = parseInt(month, 10);
+      const startDay = config.globalStartDay;
+      const { startDate, endDate } = getPeriodBoundaries(selectedYear, selectedMonth, startDay);
+      const startDateStr = startDate.toISOString();
+      const endDateStr = endDate.toISOString();
+
+      // Fetch all logs in the period
+      const logs = db.prepare(`
+        SELECT employee_id, timestamp, type
+        FROM logs
+        WHERE timestamp >= ? AND timestamp <= ?
+        ORDER BY timestamp ASC
+      `).all(startDateStr, endDateStr);
+
+      // Group logs by employee
+      const logsByEmployee = {};
+      logs.forEach(log => {
+        if (!logsByEmployee[log.employee_id]) {
+          logsByEmployee[log.employee_id] = [];
+        }
+        logsByEmployee[log.employee_id].push(log);
+      });
+
+      // Calculate worked hours for each employee
+      employees.forEach(emp => {
+        const empLogs = logsByEmployee[emp.id] || [];
+        let totalMs = 0;
+        let lastIn = null;
+
+        for (const log of empLogs) {
+          if (log.type === 'punch_in') {
+            lastIn = new Date(log.timestamp);
+          } else if (log.type === 'punch_out' && lastIn) {
+            totalMs += new Date(log.timestamp) - lastIn;
+            lastIn = null;
+          }
+        }
+
+        emp.worked_hours = parseFloat((totalMs / (1000 * 60 * 60)).toFixed(2));
+      });
+    } else {
+      employees.forEach(emp => {
+        emp.worked_hours = 0.00;
+      });
+    }
+
     res.json(employees);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -208,28 +293,18 @@ router.post('/employees/:id/unpair', adminAuth, (req, res) => {
   }
 });
 
-// GET /api/admin/logs - Get log report with date filters and employee filter
+// GET /api/admin/logs - Get log report with period filters and employee filter
 router.get('/logs', adminAuth, (req, res) => {
-  const { start, end, employee_id } = req.query;
+  const { month, year, employee_id } = req.query;
 
   try {
-    let startDateStr;
-    let endDateStr;
+    const selectedYear = parseInt(year || new Date().getFullYear(), 10);
+    const selectedMonth = parseInt(month || (new Date().getMonth() + 1), 10);
+    const startDay = config.globalStartDay;
 
-    if (start && end) {
-      startDateStr = new Date(start).toISOString();
-      endDateStr = new Date(end).toISOString();
-    } else {
-      // Default to current periodic evaluation based on globalStartDay
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1; // 1-12
-      const startDay = config.globalStartDay;
-      const startDate = new Date(Date.UTC(year, month - 2, startDay, 0, 0, 0, 0));
-      const endDate = new Date(Date.UTC(year, month - 1, startDay - 1, 23, 59, 59, 999));
-      startDateStr = startDate.toISOString();
-      endDateStr = endDate.toISOString();
-    }
+    const { startDate, endDate } = getPeriodBoundaries(selectedYear, selectedMonth, startDay);
+    const startDateStr = startDate.toISOString();
+    const endDateStr = endDate.toISOString();
 
     let query = `
       SELECT l.id, l.timestamp, l.device_key, l.type, l.hash_validated, l.ip_address, l.user_agent,
@@ -253,7 +328,7 @@ router.get('/logs', adminAuth, (req, res) => {
       period: {
         start: startDateStr,
         end: endDateStr,
-        startDay: config.globalStartDay
+        startDay
       },
       logs
     });

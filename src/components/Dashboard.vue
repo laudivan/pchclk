@@ -44,6 +44,13 @@
               <i class="bi bi-file-earmark-spreadsheet-fill"></i> Punch Logs
             </button>
             <button 
+              @click="selectTab('export')" 
+              class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
+              :class="activeTab === 'export' ? 'btn-primary active text-white' : 'text-muted'"
+            >
+              <i class="bi bi-file-earmark-excel-fill"></i> Export Report
+            </button>
+            <button 
               @click="selectTab('config')" 
               class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
               :class="activeTab === 'config' ? 'btn-primary active text-white' : 'text-muted'"
@@ -142,6 +149,27 @@
 
             <!-- B. DIRECTORY LIST VIEW (DEFAULT) -->
             <div v-else>
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                  <h3 class="text-white fw-bold mb-1">Employee Directory</h3>
+                  <p class="text-muted small m-0">Manage registered profiles, authorizations, and worked hours.</p>
+                </div>
+                
+                <!-- Filter by Period -->
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted small">Period:</span>
+                  <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                    <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
+                  </select>
+                  <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                    <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
+                  </select>
+                  <button @click="fetchEmployees" class="btn btn-primary btn-sm px-3 py-2">
+                    <i class="bi bi-filter"></i> Filter
+                  </button>
+                </div>
+              </div>
+
               <!-- Error message if any -->
               <div v-if="employeesError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ employeesError }}
@@ -156,15 +184,28 @@
               <!-- Table list -->
               <div v-else-if="employees.length > 0" class="table-responsive">
                 <table class="table custom-table text-white">
+                  <thead>
+                    <tr class="border-bottom border-glass text-muted small">
+                      <th class="py-2 border-0">Name</th>
+                      <th class="py-2 border-0">Registration</th>
+                      <th class="py-2 border-0">Worked Hours</th>
+                      <th class="py-2 border-0 text-end">Device Pairing</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     <tr v-for="emp in employees" :key="emp.id">
-                      <td>
+                      <td class="align-middle">
                         <a href="#" @click.prevent="viewEmployee(emp)" class="employee-link text-decoration-none">
                           {{ emp.name }}
                         </a>
                       </td>
-                      <td><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ emp.registration_number }}</code></td>
-                      <td class="text-end" style="width: 30%;">
+                      <td class="align-middle"><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ emp.registration_number }}</code></td>
+                      <td class="align-middle">
+                        <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1 rounded small">
+                          <i class="bi bi-clock-history me-1"></i>{{ (emp.worked_hours || 0).toFixed(2) }}h
+                        </span>
+                      </td>
+                      <td class="text-end align-middle" style="width: 25%;">
                         <!-- If device is paired, clicking unpairs it with confirmation -->
                         <button v-if="emp.is_device_active === 1" @click="confirmUnpairDevice(emp)" class="btn btn-outline-success btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to Unpair Device">
                           <i class="bi bi-check-circle-fill"></i> Paired
@@ -201,10 +242,13 @@
               
               <!-- Filter Controls -->
               <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">From:</span>
-                <input type="date" v-model="filterStartDate" class="form-control bg-dark border-glass text-white py-2 px-3 small" />
-                <span class="text-muted small">To:</span>
-                <input type="date" v-model="filterEndDate" class="form-control bg-dark border-glass text-white py-2 px-3 small" />
+                <span class="text-muted small">Period:</span>
+                <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                  <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
+                </select>
+                <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                  <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
+                </select>
                 <button @click="fetchLogs" class="btn btn-primary btn-sm px-3 py-2">
                   <i class="bi bi-filter"></i> Filter
                 </button>
@@ -342,7 +386,45 @@
             </form>
           </div>
 
-          <!-- 4. ADMINISTRATORS TAB (SUPERADMIN ONLY) -->
+          <!-- 4. EXPORT TAB -->
+          <div v-if="activeTab === 'export'" class="glass-panel p-4 h-100">
+            <h3 class="text-white fw-bold mb-1">Export Periodic Report</h3>
+            <p class="text-muted small mb-4">Download a multi-sheet Excel spreadsheet containing punch records for all employees during the selected period.</p>
+
+            <div class="col-md-7">
+              <div class="card bg-dark bg-opacity-25 border-glass p-4 rounded-3 mb-4">
+                <h5 class="text-white fw-bold mb-3 small"><i class="bi bi-gear-fill me-2 text-primary"></i>Export Configurations</h5>
+                
+                <div class="mb-4">
+                  <label class="form-label text-muted small fw-bold mb-2">SELECT PERIOD</label>
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <select v-model="exportMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small">
+                        <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <select v-model="exportYear" class="form-select bg-dark border-glass text-white py-2 px-3 small">
+                        <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="exportError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ exportError }}
+              </div>
+
+              <button @click="downloadExcelReport" class="btn btn-primary w-100 py-3 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" :disabled="exportLoading">
+                <span v-if="exportLoading" class="spinner-border spinner-border-sm" role="status"></span>
+                <i v-else class="bi bi-download fs-5"></i>
+                Download Excel Report
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. ADMINISTRATORS TAB (SUPERADMIN ONLY) -->
           <div v-if="activeTab === 'admins' && admin.role === 'superadmin'" class="glass-panel p-4 h-100">
             <div class="d-flex align-items-center justify-content-between mb-4">
               <div>
@@ -548,10 +630,13 @@
               </button>
               
               <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">From:</span>
-                <input type="date" v-model="freqStartDate" class="form-control bg-dark border-glass text-white py-1 px-2 small" style="width: auto;" />
-                <span class="text-muted small">To:</span>
-                <input type="date" v-model="freqEndDate" class="form-control bg-dark border-glass text-white py-1 px-2 small" style="width: auto;" />
+                <span class="text-muted small">Period:</span>
+                <select v-model="freqMonth" class="form-select bg-dark border-glass text-white py-1 px-2 small" style="width: auto;">
+                  <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
+                </select>
+                <select v-model="freqYear" class="form-select bg-dark border-glass text-white py-1 px-2 small" style="width: auto;">
+                  <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
+                </select>
                 <button @click="fetchEmployeeLogs" class="btn btn-primary btn-sm px-3 py-1">
                   <i class="bi bi-filter"></i> Filter
                 </button>
@@ -815,8 +900,8 @@ export default {
     const logsLoading = ref(false);
     const logsError = ref('');
     const logPeriod = ref(null);
-    const filterStartDate = ref('');
-    const filterEndDate = ref('');
+    const filterMonth = ref(new Date().getMonth() + 1); // 1-12
+    const filterYear = ref(new Date().getFullYear());
 
     // Config state
     const configStartDay = ref(20);
@@ -828,8 +913,12 @@ export default {
     const showFreqReportModal = ref(false);
     const freqLogs = ref([]);
     const freqLoading = ref(false);
-    const freqStartDate = ref('');
-    const freqEndDate = ref('');
+    const freqMonth = ref(new Date().getMonth() + 1);
+    const freqYear = ref(new Date().getFullYear());
+    const exportMonth = ref(new Date().getMonth() + 1);
+    const exportYear = ref(new Date().getFullYear());
+    const exportLoading = ref(false);
+    const exportError = ref('');
     const showAddPunchForm = ref(false);
     const newPunchDate = ref('');
     const newPunchTime = ref('08:00:00');
@@ -928,7 +1017,7 @@ export default {
       employeesError.value = '';
 
       try {
-        const response = await fetch('/api/admin/employees', {
+        const response = await fetch(`/api/admin/employees?month=${filterMonth.value}&year=${filterYear.value}`, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1172,13 +1261,8 @@ export default {
       logsLoading.value = true;
       logsError.value = '';
 
-      let url = '/api/admin/logs';
-      if (filterStartDate.value && filterEndDate.value) {
-        url += `?start=${filterStartDate.value}&end=${filterEndDate.value}`;
-      }
-
       try {
-        const response = await fetch(url, {
+        const response = await fetch(`/api/admin/logs?month=${filterMonth.value}&year=${filterYear.value}`, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1193,14 +1277,6 @@ export default {
         const data = await response.json();
         logs.value = data.logs;
         logPeriod.value = data.period;
-
-        // Initialize date pickers if empty
-        if (!filterStartDate.value) {
-          filterStartDate.value = toDateInputString(data.period.start);
-        }
-        if (!filterEndDate.value) {
-          filterEndDate.value = toDateInputString(data.period.end);
-        }
       } catch (err) {
         logsError.value = err.message;
       } finally {
@@ -1211,8 +1287,8 @@ export default {
     // Fetch specific employee logs for individual report
     const openEmployeeFrequencyReport = (emp) => {
       activeEmployee.value = emp;
-      freqStartDate.value = toDateInputString(logPeriod.value?.start);
-      freqEndDate.value = toDateInputString(logPeriod.value?.end);
+      freqMonth.value = filterMonth.value;
+      freqYear.value = filterYear.value;
       showAddPunchForm.value = false;
       showFreqReportModal.value = true;
       fetchEmployeeLogs();
@@ -1220,12 +1296,8 @@ export default {
 
     const fetchEmployeeLogs = async () => {
       freqLoading.value = true;
-      let url = `/api/admin/logs?employee_id=${activeEmployee.value.id}`;
-      if (freqStartDate.value && freqEndDate.value) {
-        url += `&start=${freqStartDate.value}&end=${freqEndDate.value}`;
-      }
       try {
-        const response = await fetch(url, {
+        const response = await fetch(`/api/admin/logs?employee_id=${activeEmployee.value.id}&month=${freqMonth.value}&year=${freqYear.value}`, {
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Accept-Language': navigator.language
@@ -1240,6 +1312,163 @@ export default {
         console.error('Error fetching employee frequency report logs:', err);
       } finally {
         freqLoading.value = false;
+      }
+    };
+
+    const downloadExcelReport = async () => {
+      exportLoading.value = true;
+      exportError.value = '';
+
+      try {
+        // 1. Fetch logs for all employees in this period
+        const logsResponse = await fetch(`/api/admin/logs?month=${exportMonth.value}&year=${exportYear.value}`, {
+          headers: {
+            'Authorization': `Bearer ${props.token}`,
+            'Accept-Language': navigator.language
+          }
+        });
+
+        if (!logsResponse.ok) {
+          throw new Error('Failed to retrieve logs for export.');
+        }
+        const logsData = await logsResponse.json();
+        const allLogs = logsData.logs;
+        const periodStart = logsData.period.start;
+        const periodEnd = logsData.period.end;
+
+        // 2. Fetch all employees to separate sheets
+        const empResponse = await fetch(`/api/admin/employees?month=${exportMonth.value}&year=${exportYear.value}`, {
+          headers: {
+            'Authorization': `Bearer ${props.token}`,
+            'Accept-Language': navigator.language
+          }
+        });
+
+        if (!empResponse.ok) {
+          throw new Error('Failed to retrieve employee directory for export.');
+        }
+        const employeesList = await empResponse.json();
+
+        // 3. Generate XML Spreadsheet 2003 content
+        let xml = `<?xml version="1.0" encoding="utf-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+  <Styles>
+    <Style ss:Id="Default" ss:Name="Normal">
+      <Alignment ss:Vertical="Bottom"/>
+      <Borders/>
+      <Font ss:FontName="Calibri" x:CharSet="1" x:Family="Swiss" ss:Size="11" ss:Color="#000000"/>
+      <Interior/>
+      <NumberFormat/>
+      <Protection/>
+    </Style>
+    <Style ss:Id="Bold">
+      <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Bold="1" ss:Color="#000000"/>
+    </Style>
+    <Style ss:Id="Header">
+      <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#1F4E78" ss:Pattern="Solid"/>
+    </Style>
+  </Styles>`;
+
+        // For each employee, create a separate sheet
+        for (const emp of employeesList) {
+          // Filter and sort logs for this employee ascending
+          const empLogs = allLogs
+            .filter(l => l.employee_id === emp.id)
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+          // Pair Punch In and Punch Out
+          const rows = [];
+          let currentIn = null;
+
+          for (const log of empLogs) {
+            if (log.type === 'punch_in') {
+              currentIn = log;
+            } else if (log.type === 'punch_out' && currentIn) {
+              const inTime = new Date(currentIn.timestamp);
+              const outTime = new Date(log.timestamp);
+              const diffMs = outTime - inTime;
+              const hours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
+              
+              rows.push({
+                date: inTime.toLocaleDateString(navigator.language),
+                punchIn: inTime.toLocaleTimeString(navigator.language),
+                punchOut: outTime.toLocaleTimeString(navigator.language),
+                workedHours: hours
+              });
+              currentIn = null;
+            }
+          }
+
+          // Sanitise Sheet Name (max 31 chars, no invalid chars)
+          const cleanSheetName = emp.name.replace(/[\\\\/?*\\[\\]]/g, '').substring(0, 30) || `Employee_${emp.id}`;
+
+          const periodName = `${getMonthName(exportMonth.value)} ${exportYear.value}`;
+          const periodString = `${new Date(periodStart).toLocaleDateString(navigator.language)} to ${new Date(periodEnd).toLocaleDateString(navigator.language)} (${periodName})`;
+
+          xml += `
+  <Worksheet ss:Name="${cleanSheetName}">
+    <Table>
+      <Column ss:Width="120"/>
+      <Column ss:Width="120"/>
+      <Column ss:Width="120"/>
+      <Column ss:Width="120"/>
+      <Row>
+        <Cell ss:StyleID="Bold"><Data ss:Type="String">Registration:</Data></Cell>
+        <Cell><Data ss:Type="String">${emp.registration_number}</Data></Cell>
+      </Row>
+      <Row>
+        <Cell ss:StyleID="Bold"><Data ss:Type="String">Employee Name:</Data></Cell>
+        <Cell><Data ss:Type="String">${emp.name}</Data></Cell>
+      </Row>
+      <Row>
+        <Cell ss:StyleID="Bold"><Data ss:Type="String">Period:</Data></Cell>
+        <Cell><Data ss:Type="String">${periodString}</Data></Cell>
+      </Row>
+      <Row/>
+      <Row ss:StyleID="Header">
+        <Cell><Data ss:Type="String">Date</Data></Cell>
+        <Cell><Data ss:Type="String">Punch In</Data></Cell>
+        <Cell><Data ss:Type="String">Punch Out</Data></Cell>
+        <Cell><Data ss:Type="String">Worked Hours</Data></Cell>
+      </Row>`;
+
+          for (const r of rows) {
+            xml += `
+      <Row>
+        <Cell><Data ss:Type="String">${r.date}</Data></Cell>
+        <Cell><Data ss:Type="String">${r.punchIn}</Data></Cell>
+        <Cell><Data ss:Type="String">${r.punchOut}</Data></Cell>
+        <Cell><Data ss:Type="Number">${r.workedHours}</Data></Cell>
+      </Row>`;
+          }
+
+          xml += `
+    </Table>
+  </Worksheet>`;
+        }
+
+        xml += `
+</Workbook>`;
+
+        // Trigger File Download
+        const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const link = document.createElement('a');
+        const dateStr = `${exportYear.value}_${String(exportMonth.value).padStart(2, '0')}`;
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `Punch_Records_${dateStr}.xls`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        exportError.value = err.message;
+      } finally {
+        exportLoading.value = false;
       }
     };
 
@@ -1566,8 +1795,8 @@ export default {
       logsLoading,
       logsError,
       logPeriod,
-      filterStartDate,
-      filterEndDate,
+      filterMonth,
+      filterYear,
       fetchLogs,
       formatTimestamp,
       formatDateRange,
@@ -1604,8 +1833,8 @@ export default {
       showFreqReportModal,
       freqLogs,
       freqLoading,
-      freqStartDate,
-      freqEndDate,
+      freqMonth,
+      freqYear,
       showAddPunchForm,
       newPunchDate,
       newPunchTime,
@@ -1616,6 +1845,11 @@ export default {
       editLogType,
       openEmployeeFrequencyReport,
       fetchEmployeeLogs,
+      downloadExcelReport,
+      exportMonth,
+      exportYear,
+      exportLoading,
+      exportError,
       groupedFreqLogs,
       submitAddPunch,
       startEditLog,

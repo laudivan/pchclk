@@ -363,26 +363,22 @@ test('GET /api/admin/logs - Success retrieving filtered period logs', async () =
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
-  // Insert punch log within the expected range
-  const testDateIn = new Date(Date.UTC(currentYear, currentMonth - 1, 1, 12, 0, 0));
-  insertLog.run(1, testDateIn.toISOString(), 'test-device-key', 'punch_in', 1, '127.0.0.1', 'Mozilla');
-
-  // Insert punch log outside the range
-  const testDateOut = new Date(Date.UTC(currentYear, currentMonth - 4, 1, 12, 0, 0));
-  insertLog.run(1, testDateOut.toISOString(), 'test-device-key', 'punch_out', 1, '127.0.0.1', 'Mozilla');
-
-  // Let's run a POST config to set startDay = 15
+  // Run a POST config to set startDay = 15
   await makeRequest('/api/admin/config', {
     method: 'POST',
     headers: { Authorization: `Bearer ${adminToken}` },
     body: JSON.stringify({ globalStartDay: 15 }),
   });
 
-  const startDay = 15;
-  const startDate = new Date(Date.UTC(currentYear, currentMonth - 2, startDay, 0, 0, 0, 0)).toISOString();
-  const endDate = new Date(Date.UTC(currentYear, currentMonth - 1, startDay - 1, 23, 59, 59, 999)).toISOString();
+  // Insert punch log within the expected range (starts on currentMonth 15th)
+  const testDateIn = new Date(Date.UTC(currentYear, currentMonth - 1, 15, 12, 0, 0));
+  insertLog.run(1, testDateIn.toISOString(), 'test-device-key', 'punch_in', 1, '127.0.0.1', 'Mozilla');
 
-  const { status, data } = await makeRequest(`/api/admin/logs?start=${startDate}&end=${endDate}`, {
+  // Insert punch log outside the range
+  const testDateOut = new Date(Date.UTC(currentYear, currentMonth - 2, 15, 12, 0, 0));
+  insertLog.run(1, testDateOut.toISOString(), 'test-device-key', 'punch_out', 1, '127.0.0.1', 'Mozilla');
+
+  const { status, data } = await makeRequest(`/api/admin/logs?month=${currentMonth}&year=${currentYear}`, {
     headers: { Authorization: `Bearer ${adminToken}` },
   });
 
@@ -449,6 +445,45 @@ test('POST, PUT, DELETE /api/admin/logs - CRUD operations on punch logs', async 
 
   const deletedLog = db.prepare('SELECT * FROM logs WHERE id = ?').get(logId);
   assert.strictEqual(deletedLog, undefined);
+});
+
+test('GET /api/admin/employees - Worked hours calculation for period', async () => {
+  // Clear logs and insert mock logs for José Silva (employee_id: 1)
+  db.prepare('DELETE FROM logs').run();
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  // Set startDay to 20
+  await makeRequest('/api/admin/config', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ globalStartDay: 20 }),
+  });
+
+  // Jose Silva starts on 20th of previous month (named currentMonth if startDay > 15)
+  // Let's punch in at 08:00 and punch out at 17:00 (9 hours worked)
+  const baseDate = new Date(Date.UTC(currentYear, currentMonth - 2, 20, 8, 0, 0));
+  const endDate = new Date(Date.UTC(currentYear, currentMonth - 2, 20, 17, 0, 0));
+
+  const insertLog = db.prepare(`
+    INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated, ip_address)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  insertLog.run(1, baseDate.toISOString(), 'test-device-key', 'punch_in', 1, '127.0.0.1');
+  insertLog.run(1, endDate.toISOString(), 'test-device-key', 'punch_out', 1, '127.0.0.1');
+
+  const { status, data } = await makeRequest(`/api/admin/employees?month=${currentMonth}&year=${currentYear}`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+
+  assert.strictEqual(status, 200);
+  assert.ok(Array.isArray(data));
+  const jose = data.find(emp => emp.id === 1);
+  assert.ok(jose);
+  assert.strictEqual(jose.worked_hours, 9.00);
 });
 
 // ----------------------------------------------------
