@@ -114,11 +114,11 @@
                   <div class="small fw-bold text-white">Punch Registered</div>
                   <div class="text-muted fs-8">{{ formatTimestamp(log.timestamp) }}</div>
                 </div>
-                <span v-if="log.hash_validated === 1" class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 fs-9 px-2 py-1 rounded">
-                  <i class="bi bi-qr-code me-1"></i>QR Verified
+                <span v-if="log.type === 'punch_in'" class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 fs-9 px-2 py-1 rounded">
+                  <i class="bi bi-box-arrow-in-right me-1"></i>Punch In
                 </span>
-                <span v-else class="badge bg-secondary bg-opacity-15 text-white-50 border border-glass fs-9 px-2 py-1 rounded">
-                  <i class="bi bi-exclamation-circle me-1"></i>Bypass
+                <span v-else class="badge bg-danger bg-opacity-15 text-danger border border-danger border-opacity-25 fs-9 px-2 py-1 rounded">
+                  <i class="bi bi-box-arrow-left me-1"></i>Punch Out
                 </span>
               </div>
             </div>
