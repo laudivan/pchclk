@@ -11,9 +11,10 @@
             <div class="text-white small fw-bold">{{ admin.username }}</div>
             <div class="text-muted small fs-8">{{ admin.role.toUpperCase() }}</div>
           </div>
-          
+
           <!-- Mobile Menu Toggler -->
-          <button @click="showMobileMenu = !showMobileMenu" class="btn btn-outline-light d-lg-none btn-sm px-2 py-1 mobile-menu-btn">
+          <button @click="showMobileMenu = !showMobileMenu"
+            class="btn btn-outline-light d-lg-none btn-sm px-2 py-1 mobile-menu-btn">
             <i class="bi" :class="showMobileMenu ? 'bi-x-lg' : 'bi-list'" style="font-size: 1.25rem;"></i>
           </button>
 
@@ -27,43 +28,32 @@
     <main class="container flex-grow-1 mb-5">
       <div class="row g-4">
         <!-- Sidebar Navigation -->
-        <div class="col-lg-3" :class="{'d-none d-lg-block': !showMobileMenu}">
+        <div class="col-lg-3" :class="{ 'd-none d-lg-block': !showMobileMenu }">
           <div class="glass-panel p-3 d-flex flex-column gap-2">
-            <button 
-              @click="selectTab('employees')" 
+            <button @click="selectTab('employees')"
               class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
-              :class="activeTab === 'employees' ? 'btn-primary active text-white' : 'text-muted'"
-            >
+              :class="activeTab === 'employees' ? 'btn-primary active text-white' : 'text-muted'">
               <i class="bi bi-people-fill"></i> Employees
             </button>
-            <button 
-              @click="selectTab('logs')" 
+            <button @click="selectTab('logs')"
               class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
-              :class="activeTab === 'logs' ? 'btn-primary active text-white' : 'text-muted'"
-            >
+              :class="activeTab === 'logs' ? 'btn-primary active text-white' : 'text-muted'">
               <i class="bi bi-file-earmark-spreadsheet-fill"></i> Punch Logs
             </button>
-            <button 
-              @click="selectTab('export')" 
+            <button @click="selectTab('export')"
               class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
-              :class="activeTab === 'export' ? 'btn-primary active text-white' : 'text-muted'"
-            >
+              :class="activeTab === 'export' ? 'btn-primary active text-white' : 'text-muted'">
               <i class="bi bi-file-earmark-excel-fill"></i> Export Report
             </button>
-            <button 
-              @click="selectTab('config')" 
+            <button @click="selectTab('config')"
               class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
-              :class="activeTab === 'config' ? 'btn-primary active text-white' : 'text-muted'"
-            >
+              :class="activeTab === 'config' ? 'btn-primary active text-white' : 'text-muted'">
               <i class="bi bi-sliders"></i> Configurations
             </button>
             <!-- Manage Admins (Superadmin Only) -->
-            <button 
-              v-if="admin.role === 'superadmin'"
-              @click="selectTab('admins')" 
+            <button v-if="admin.role === 'superadmin'" @click="selectTab('admins')"
               class="nav-link text-start w-100 btn py-3 px-4 rounded-3 border-0 d-flex align-items-center gap-3"
-              :class="activeTab === 'admins' ? 'btn-primary active text-white' : 'text-muted'"
-            >
+              :class="activeTab === 'admins' ? 'btn-primary active text-white' : 'text-muted'">
               <i class="bi bi-shield-lock-fill"></i> Administrators
             </button>
           </div>
@@ -76,55 +66,50 @@
             <!-- A. EMPLOYEE FORMULARY (DETAILS VIEW) -->
             <div v-if="activeEmployee">
               <div class="d-flex align-items-center justify-content-between mb-4">
-                <button @click="clearActiveEmployee" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
+                <button @click="clearActiveEmployee"
+                  class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
                   <i class="bi bi-arrow-left"></i> Back to Directory
                 </button>
                 <span class="badge bg-secondary fs-7 px-3 py-2 text-uppercase">Employee details</span>
               </div>
-              
+
               <h3 class="text-white fw-bold mb-1">Employee Details</h3>
-              <p class="text-muted small mb-4">View profile info, edit registration details, or access frequency reports.</p>
-              
+              <p class="text-muted small mb-4">View profile info, edit registration details, or access frequency
+                reports.</p>
+
               <form @submit.prevent="triggerSaveConfirm">
                 <div class="row g-3 mb-4">
                   <div class="col-md-6">
                     <label for="formName" class="form-label text-muted small fw-bold">FULL NAME</label>
-                    <input 
-                      v-model="formEmpName" 
-                      type="text" 
-                      id="formName" 
-                      class="form-control" 
-                      :disabled="!isEditingEmployee" 
-                      required 
-                    />
+                    <input v-model="formEmpName" type="text" id="formName" class="form-control"
+                      :disabled="!isEditingEmployee" required />
                   </div>
                   <div class="col-md-6">
-                    <label for="formReg" class="form-label text-muted small fw-bold">REGISTRATION NUMBER (UNIQUE)</label>
-                    <input 
-                      v-model="formEmpReg" 
-                      type="text" 
-                      id="formReg" 
-                      class="form-control" 
-                      :disabled="!isEditingEmployee" 
-                      required 
-                    />
+                    <label for="formReg" class="form-label text-muted small fw-bold">REGISTRATION NUMBER
+                      (UNIQUE)</label>
+                    <input v-model="formEmpReg" type="text" id="formReg" class="form-control"
+                      :disabled="!isEditingEmployee" required />
                   </div>
                 </div>
 
                 <!-- Feedback -->
-                <div v-if="formularyError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-3">
+                <div v-if="formularyError"
+                  class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-3">
                   <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ formularyError }}
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top border-glass">
+                <div
+                  class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top border-glass">
                   <div class="d-flex gap-2">
                     <!-- Non-editing Actions -->
                     <template v-if="!isEditingEmployee">
-                      <button type="button" @click="startEditEmployee" class="btn btn-outline-warning d-flex align-items-center gap-2">
+                      <button type="button" @click="startEditEmployee"
+                        class="btn btn-outline-warning d-flex align-items-center gap-2">
                         <i class="bi bi-pencil-fill"></i> Edit
                       </button>
-                      <button type="button" @click="confirmDeleteEmployee(activeEmployee)" class="btn btn-outline-danger d-flex align-items-center gap-2">
+                      <button type="button" @click="confirmDeleteEmployee(activeEmployee)"
+                        class="btn btn-outline-danger d-flex align-items-center gap-2">
                         <i class="bi bi-trash-fill"></i> Remove
                       </button>
                     </template>
@@ -133,14 +118,16 @@
                       <button type="submit" class="btn btn-success d-flex align-items-center gap-2">
                         <i class="bi bi-check-circle-fill"></i> Save
                       </button>
-                      <button type="button" @click="cancelEditEmployee" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                      <button type="button" @click="cancelEditEmployee"
+                        class="btn btn-outline-secondary d-flex align-items-center gap-2">
                         <i class="bi bi-x-circle-fill"></i> Cancel
                       </button>
                     </template>
                   </div>
-                  
+
                   <!-- Frequency Report Button -->
-                  <button type="button" @click="openEmployeeFrequencyReport(activeEmployee)" class="btn btn-outline-primary d-flex align-items-center gap-2">
+                  <button type="button" @click="openEmployeeFrequencyReport(activeEmployee)"
+                    class="btn btn-outline-primary d-flex align-items-center gap-2">
                     <i class="bi bi-calendar-check-fill"></i> View Frequency Report
                   </button>
                 </div>
@@ -154,14 +141,16 @@
                   <h3 class="text-white fw-bold mb-1">Employee Directory</h3>
                   <p class="text-muted small m-0">Manage registered profiles, authorizations, and worked hours.</p>
                 </div>
-                
+
                 <!-- Filter by Period -->
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small">Period:</span>
-                  <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                  <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small"
+                    style="width: auto;">
                     <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
                   </select>
-                  <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                  <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small"
+                    style="width: auto;">
                     <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
                   </select>
                   <button @click="fetchEmployees" class="btn btn-primary btn-sm px-3 py-2">
@@ -171,7 +160,8 @@
               </div>
 
               <!-- Error message if any -->
-              <div v-if="employeesError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
+              <div v-if="employeesError"
+                class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ employeesError }}
               </div>
 
@@ -199,23 +189,31 @@
                           {{ emp.name }}
                         </a>
                       </td>
-                      <td class="align-middle"><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ emp.registration_number }}</code></td>
+                      <td class="align-middle"><code class="text-white-50 bg-dark px-2 py-1 rounded">{{ emp.registration_number
+              }}</code></td>
                       <td class="align-middle">
-                        <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1 rounded small">
+                        <span
+                          class=" bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1 rounded small">
                           <i class="bi bi-clock-history me-1"></i>{{ (emp.worked_hours || 0).toFixed(2) }}h
                         </span>
                       </td>
                       <td class="text-end align-middle" style="width: 25%;">
                         <!-- If device is paired, clicking unpairs it with confirmation -->
-                        <button v-if="emp.is_device_active === 1" @click="confirmUnpairDevice(emp)" class="btn btn-outline-success btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to Unpair Device">
+                        <button v-if="emp.is_device_active === 1" @click="confirmUnpairDevice(emp)"
+                          class="btn btn-outline-success btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3"
+                          title="Click to Unpair Device">
                           <i class="bi bi-check-circle-fill"></i> Paired
                         </button>
                         <!-- If device is pending pairing, clicking shows the pairing code window -->
-                        <button v-else-if="emp.auth_code" @click="authorizeDevice(emp)" class="btn btn-outline-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to View Pairing Code">
+                        <button v-else-if="emp.auth_code" @click="authorizeDevice(emp)"
+                          class="btn btn-outline-warning btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3"
+                          title="Click to View Pairing Code">
                           <i class="bi bi-hourglass-split"></i> Pending
                         </button>
                         <!-- If unauthorized, clicking opens the pairing code window -->
-                        <button v-else @click="authorizeDevice(emp)" class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3" title="Click to Get Pairing Code">
+                        <button v-else @click="authorizeDevice(emp)"
+                          class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 py-2 px-3"
+                          title="Click to Get Pairing Code">
                           <i class="bi bi-key-fill"></i> Pair
                         </button>
                       </td>
@@ -239,14 +237,16 @@
                 <h3 class="text-white fw-bold mb-1">Punch Records</h3>
                 <p class="text-muted small m-0">View registered employee clock-in actions.</p>
               </div>
-              
+
               <!-- Filter Controls -->
               <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small">Period:</span>
-                <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                <select v-model="filterMonth" class="form-select bg-dark border-glass text-white py-2 px-3 small"
+                  style="width: auto;">
                   <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
                 </select>
-                <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small" style="width: auto;">
+                <select v-model="filterYear" class="form-select bg-dark border-glass text-white py-2 px-3 small"
+                  style="width: auto;">
                   <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
                 </select>
                 <button @click="fetchLogs" class="btn btn-primary btn-sm px-3 py-2">
@@ -256,7 +256,8 @@
             </div>
 
             <!-- Active Frequency period calculated helper -->
-            <div v-if="logPeriod" class="alert alert-info bg-primary bg-opacity-10 border-0 text-white-50 rounded-3 py-3 small mb-4 d-flex align-items-center justify-content-between">
+            <div v-if="logPeriod"
+              class="alert alert-info bg-primary bg-opacity-10 border-0 text-white-50 rounded-3 py-3 small mb-4 d-flex align-items-center justify-content-between">
               <div>
                 <i class="bi bi-calendar-event-fill text-primary me-2"></i>
                 Active Period: <strong class="text-white">{{ formatDateRange(logPeriod.start, logPeriod.end) }}</strong>
@@ -265,7 +266,8 @@
             </div>
 
             <!-- Error message -->
-            <div v-if="logsError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
+            <div v-if="logsError"
+              class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ logsError }}
             </div>
 
@@ -286,10 +288,11 @@
                         {{ log.employee_name }}
                       </td>
                       <td class="align-middle" style="width: 25%;">
-                        <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1 small">
+                        <span v-if="log.type === 'punch_in'"
+                          class="text-success border-success border-opacity-25 px-2 py-1 small">
                           <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
                         </span>
-                        <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1 small">
+                        <span v-else class=" text-danger border-danger border-opacity-25 px-2 py-1 small">
                           <i class="bi bi-box-arrow-left me-1"></i> Punch Out
                         </span>
                       </td>
@@ -298,10 +301,12 @@
                       </td>
                       <td class="align-middle text-end" style="width: 20%;">
                         <div class="d-inline-flex gap-1">
-                          <button @click="startEditLog(log)" class="btn btn-outline-warning btn-sm p-1" title="Edit Entry" style="line-height: 1;">
+                          <button @click="startEditLog(log)" class="btn btn-outline-warning btn-sm p-1"
+                            title="Edit Entry" style="line-height: 1;">
                             <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
                           </button>
-                          <button @click="deleteLog(log.id)" class="btn btn-outline-danger btn-sm p-1" title="Delete Entry" style="line-height: 1;">
+                          <button @click="deleteLog(log.id)" class="btn btn-outline-danger btn-sm p-1"
+                            title="Delete Entry" style="line-height: 1;">
                             <i class="bi bi-trash" style="font-size: 0.8rem;"></i>
                           </button>
                         </div>
@@ -314,10 +319,13 @@
                         {{ log.employee_name }}
                       </td>
                       <td class="align-middle" style="width: 30%;">
-                        <input type="time" v-model="editLogTime" class="form-control form-control-sm bg-dark border-glass text-white font-monospace" step="1" required />
+                        <input type="time" v-model="editLogTime"
+                          class="form-control form-control-sm bg-dark border-glass text-white font-monospace" step="1"
+                          required />
                       </td>
                       <td class="align-middle" style="width: 25%;">
-                        <select v-model="editLogType" class="form-select form-select-sm bg-dark border-glass text-white" required>
+                        <select v-model="editLogType" class="form-select form-select-sm bg-dark border-glass text-white"
+                          required>
                           <option value="punch_in">In</option>
                           <option value="punch_out">Out</option>
                         </select>
@@ -354,28 +362,26 @@
               <div class="mb-4">
                 <label for="startDay" class="form-label text-muted small fw-bold">FREQUENCY PERIOD STARTING DAY</label>
                 <div class="input-group mb-2">
-                  <input 
-                    v-model.number="configStartDay" 
-                    type="number" 
-                    id="startDay" 
-                    class="form-control" 
-                    min="1" 
-                    max="28" 
-                    required
-                  />
+                  <input v-model.number="configStartDay" type="number" id="startDay" class="form-control" min="1"
+                    max="28" required />
                   <span class="input-group-text bg-dark border-glass text-muted">of month</span>
                 </div>
                 <div class="text-muted fs-8">
-                  Configures the start day of periodic evaluation. For example, setting this to <strong>{{ configStartDay }}</strong> sets ranges like: 
-                  <span class="text-white">Month {{ filterMonth - 1 || 12 }} {{ configStartDay }}th</span> to <span class="text-white">Month {{ filterMonth }} {{ configStartDay - 1 }}th</span>.
+                  Configures the start day of periodic evaluation. For example, setting this to <strong>{{
+                    configStartDay
+                    }}</strong> sets ranges like:
+                  <span class="text-white">Month {{ filterMonth - 1 || 12 }} {{ configStartDay }}th</span> to <span
+                    class="text-white">Month {{ filterMonth }} {{ configStartDay - 1 }}th</span>.
                 </div>
               </div>
 
               <!-- Message feedback -->
-              <div v-if="configSuccessMessage" class="alert alert-success bg-success bg-opacity-10 border-0 text-success rounded-3 py-3 small mb-3">
+              <div v-if="configSuccessMessage"
+                class="alert alert-success bg-success bg-opacity-10 border-0 text-success rounded-3 py-3 small mb-3">
                 <i class="bi bi-check-circle-fill me-2"></i>{{ configSuccessMessage }}
               </div>
-              <div v-if="configError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-3">
+              <div v-if="configError"
+                class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-3">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ configError }}
               </div>
 
@@ -389,12 +395,16 @@
           <!-- 4. EXPORT TAB -->
           <div v-if="activeTab === 'export'" class="glass-panel p-4 h-100">
             <h3 class="text-white fw-bold mb-1">Export Periodic Report</h3>
-            <p class="text-muted small mb-4">Download a multi-sheet ODS spreadsheet containing punch records for all employees during the selected period.</p>
+            <p class="text-muted small mb-4">Download a multi-sheet ODS spreadsheet containing punch records for all
+              employees
+              during the selected period.</p>
 
             <div class="col-md-7">
               <div class="card bg-dark bg-opacity-25 border-glass p-4 rounded-3 mb-4">
-                <h5 class="text-white fw-bold mb-3 small"><i class="bi bi-gear-fill me-2 text-primary"></i>Export Configurations</h5>
-                
+                <h5 class="text-white fw-bold mb-3 small"><i class="bi bi-gear-fill me-2 text-primary"></i>Export
+                  Configurations
+                </h5>
+
                 <div class="mb-4">
                   <label class="form-label text-muted small fw-bold mb-2">SELECT PERIOD</label>
                   <div class="row g-2">
@@ -412,11 +422,14 @@
                 </div>
               </div>
 
-              <div v-if="exportError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-3">
+              <div v-if="exportError"
+                class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-3">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ exportError }}
               </div>
 
-              <button @click="downloadExcelReport" class="btn btn-primary w-100 py-3 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" :disabled="exportLoading">
+              <button @click="downloadExcelReport"
+                class="btn btn-primary w-100 py-3 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2"
+                :disabled="exportLoading">
                 <span v-if="exportLoading" class="spinner-border spinner-border-sm" role="status"></span>
                 <i v-else class="bi bi-download fs-5"></i>
                 Download ODS Report
@@ -437,7 +450,8 @@
             </div>
 
             <!-- Error message if any -->
-            <div v-if="adminsError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
+            <div v-if="adminsError"
+              class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-3 small mb-4">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ adminsError }}
             </div>
 
@@ -469,15 +483,12 @@
                     <td class="small">{{ formatTimestamp(adm.created_at) }}</td>
                     <td class="text-end">
                       <div class="d-inline-flex gap-2">
-                        <button @click="openEditAdminModal(adm)" class="btn btn-outline-warning btn-sm px-2 py-2" title="Edit Admin">
+                        <button @click="openEditAdminModal(adm)" class="btn btn-outline-warning btn-sm px-2 py-2"
+                          title="Edit Admin">
                           <i class="bi bi-pencil-fill"></i>
                         </button>
-                        <button 
-                          @click="confirmDeleteAdmin(adm)" 
-                          class="btn btn-outline-danger btn-sm px-2 py-2" 
-                          title="Remove Admin"
-                          :disabled="adm.id === admin.id"
-                        >
+                        <button @click="confirmDeleteAdmin(adm)" class="btn btn-outline-danger btn-sm px-2 py-2"
+                          title="Remove Admin" :disabled="adm.id === admin.id">
                           <i class="bi bi-trash-fill"></i>
                         </button>
                       </div>
@@ -492,7 +503,8 @@
     </main>
 
     <!-- MODAL 1: ADD EMPLOYEE -->
-    <div v-if="showAddModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showAddModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
@@ -510,7 +522,8 @@
                 <input v-model="newEmpReg" type="text" id="empReg" class="form-control" required />
               </div>
 
-              <div v-if="addError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-0">
+              <div v-if="addError"
+                class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-0">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ addError }}
               </div>
             </div>
@@ -527,16 +540,21 @@
     </div>
 
     <!-- MODAL 2: AUTHORIZE DEVICE (PAIRING CODE) -->
-    <div v-if="showAuthModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showAuthModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
-            <h5 class="modal-title text-white fw-bold"><i class="bi bi-key-fill text-primary me-2"></i>Device Pairing Code</h5>
-            <button type="button" @click="showAuthModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+            <h5 class="modal-title text-white fw-bold"><i class="bi bi-key-fill text-primary me-2"></i>Device Pairing
+              Code
+            </h5>
+            <button type="button" @click="showAuthModal = false" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-center">
             <p class="text-muted small mb-1">Share this code with the employee.</p>
-            <p class="text-muted small mb-4">They must enter it in the <strong class="text-white">PchClk Employee PWA</strong> to pair their device.</p>
+            <p class="text-muted small mb-4">They must enter it in the <strong class="text-white">PchClk Employee
+                PWA</strong> to pair their device.</p>
 
             <h4 class="text-white fw-bold mb-4">{{ selectedEmployeeName }}</h4>
 
@@ -544,17 +562,14 @@
             <div class="pairing-code-block mb-4">
               <div class="pairing-code-label">PAIRING CODE</div>
               <div class="pairing-code-digits">{{ authCode }}</div>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary mt-3 px-4"
-                @click="copyAuthCode"
-              >
+              <button type="button" class="btn btn-sm btn-outline-secondary mt-3 px-4" @click="copyAuthCode">
                 <i class="bi" :class="codeCopied ? 'bi-check-lg text-success' : 'bi-clipboard'"></i>
                 {{ codeCopied ? 'Copied!' : 'Copy Code' }}
               </button>
             </div>
 
-            <div class="text-warning small fs-8 bg-warning bg-opacity-10 py-2 px-3 rounded border-warning border-opacity-15">
+            <div
+              class="text-warning small fs-8 bg-warning bg-opacity-10 py-2 px-3 rounded border-warning border-opacity-15">
               <i class="bi bi-exclamation-circle-fill me-1"></i>
               Valid for 24 hours. Issuing a new code invalidates the previous one automatically.
             </div>
@@ -567,18 +582,21 @@
     </div>
 
     <!-- MODAL 3: CONFIRM SAVE EMPLOYEE -->
-    <div v-if="showSaveConfirmModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showSaveConfirmModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
             <h5 class="modal-title text-white fw-bold">Confirm Modifications</h5>
-            <button type="button" @click="showSaveConfirmModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+            <button type="button" @click="showSaveConfirmModal = false" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-start text-white-50">
             <p>Are you sure you want to save the changes to this employee profile?</p>
           </div>
           <div class="modal-footer border-glass">
-            <button type="button" @click="showSaveConfirmModal = false" class="btn btn-outline-secondary px-4">Cancel</button>
+            <button type="button" @click="showSaveConfirmModal = false"
+              class="btn btn-outline-secondary px-4">Cancel</button>
             <button type="button" @click="saveEmployeeChanges" class="btn btn-success px-4" :disabled="editLoading">
               <span v-if="editLoading" class="spinner-border spinner-border-sm me-2"></span>
               Confirm Save
@@ -589,22 +607,29 @@
     </div>
 
     <!-- MODAL 4: CONFIRM DELETE EMPLOYEE -->
-    <div v-if="showDeleteModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showDeleteModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
             <h5 class="modal-title text-white fw-bold">Remove Employee</h5>
-            <button type="button" @click="showDeleteModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+            <button type="button" @click="showDeleteModal = false" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-start">
-            <p class="text-white-50">Are you sure you want to remove <strong>{{ employeeToDelete?.name }}</strong> (Registration: <code>{{ employeeToDelete?.registration_number }}</code>)?</p>
-            <p class="text-danger small bg-danger bg-opacity-10 py-2 px-3 rounded border border-danger border-opacity-15 mb-0">
+            <p class="text-white-50">Are you sure you want to remove <strong>{{ employeeToDelete?.name }}</strong>
+              (Registration: <code>{{ employeeToDelete?.registration_number }}</code>)?</p>
+            <p
+              class="text-danger small bg-danger bg-opacity-10 py-2 px-3 rounded border border-danger border-opacity-15 mb-0">
               <i class="bi bi-exclamation-octagon-fill me-1"></i>
-              Warning: This action is permanent and will delete all paired device authorizations and punch records for this employee.
+              Warning: This action is permanent and will delete all paired device authorizations and punch records for
+              this
+              employee.
             </p>
           </div>
           <div class="modal-footer border-glass">
-            <button type="button" @click="showDeleteModal = false" class="btn btn-outline-secondary px-4">Cancel</button>
+            <button type="button" @click="showDeleteModal = false"
+              class="btn btn-outline-secondary px-4">Cancel</button>
             <button type="button" @click="deleteEmployee" class="btn btn-danger px-4" :disabled="deleteLoading">
               <span v-if="deleteLoading" class="spinner-border spinner-border-sm me-2"></span>
               Remove Employee
@@ -615,26 +640,31 @@
     </div>
 
     <!-- MODAL 5: EMPLOYEE FREQUENCY REPORT -->
-    <div v-if="showFreqReportModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showFreqReportModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
             <h5 class="modal-title text-white fw-bold">Frequency Report - {{ activeEmployee?.name }}</h5>
-            <button type="button" @click="showFreqReportModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+            <button type="button" @click="showFreqReportModal = false" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body p-4">
             <!-- Filter Controls -->
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-              <button @click="showAddPunchForm = !showAddPunchForm" class="btn btn-sm btn-outline-success d-flex align-items-center gap-2">
+              <button @click="showAddPunchForm = !showAddPunchForm"
+                class="btn btn-sm btn-outline-success d-flex align-items-center gap-2">
                 <i class="bi bi-plus-circle-fill"></i> Add Punch
               </button>
-              
+
               <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small">Period:</span>
-                <select v-model="freqMonth" class="form-select bg-dark border-glass text-white py-1 px-2 small" style="width: auto;">
+                <select v-model="freqMonth" class="form-select bg-dark border-glass text-white py-1 px-2 small"
+                  style="width: auto;">
                   <option v-for="m in 12" :key="m" :value="m">{{ getMonthName(m) }}</option>
                 </select>
-                <select v-model="freqYear" class="form-select bg-dark border-glass text-white py-1 px-2 small" style="width: auto;">
+                <select v-model="freqYear" class="form-select bg-dark border-glass text-white py-1 px-2 small"
+                  style="width: auto;">
                   <option v-for="y in [2025, 2026, 2027]" :key="y" :value="y">{{ y }}</option>
                 </select>
                 <button @click="fetchEmployeeLogs" class="btn btn-primary btn-sm px-3 py-1">
@@ -644,30 +674,36 @@
             </div>
 
             <!-- Add manual punch section -->
-            <div v-if="showAddPunchForm" class="glass-panel p-3 mb-4 text-start border border-success border-opacity-20">
+            <div v-if="showAddPunchForm"
+              class="glass-panel p-3 mb-4 text-start border border-success border-opacity-20">
               <h6 class="text-white fw-bold mb-3 small"><i class="bi bi-plus-circle me-1"></i>Add Manual Punch</h6>
               <div class="row g-2">
                 <div class="col-md-4">
                   <label class="form-label text-muted small fw-bold mb-1" style="font-size: 0.65rem;">DATE</label>
-                  <input type="date" v-model="newPunchDate" class="form-control form-control-sm bg-dark border-glass text-white" required />
+                  <input type="date" v-model="newPunchDate"
+                    class="form-control form-control-sm bg-dark border-glass text-white" required />
                 </div>
                 <div class="col-md-3">
                   <label class="form-label text-muted small fw-bold mb-1" style="font-size: 0.65rem;">TIME</label>
-                  <input type="time" v-model="newPunchTime" class="form-control form-control-sm bg-dark border-glass text-white" step="1" required />
+                  <input type="time" v-model="newPunchTime"
+                    class="form-control form-control-sm bg-dark border-glass text-white" step="1" required />
                 </div>
                 <div class="col-md-3">
                   <label class="form-label text-muted small fw-bold mb-1" style="font-size: 0.65rem;">TYPE</label>
-                  <select v-model="newPunchType" class="form-select form-select-sm bg-dark border-glass text-white" required>
+                  <select v-model="newPunchType" class="form-select form-select-sm bg-dark border-glass text-white"
+                    required>
                     <option value="punch_in">Punch In</option>
                     <option value="punch_out">Punch Out</option>
                   </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-1">
                   <button @click="submitAddPunch" class="btn btn-primary btn-sm w-100 py-1 font-semibold">Save</button>
-                  <button @click="showAddPunchForm = false" class="btn btn-outline-secondary btn-sm py-1"><i class="bi bi-x"></i></button>
+                  <button @click="showAddPunchForm = false" class="btn btn-outline-secondary btn-sm py-1"><i
+                      class="bi bi-x"></i></button>
                 </div>
               </div>
-              <div v-if="addPunchError" class="text-danger small mt-2" style="font-size: 0.75rem;">{{ addPunchError }}</div>
+              <div v-if="addPunchError" class="text-danger small mt-2" style="font-size: 0.75rem;">{{ addPunchError }}
+              </div>
             </div>
 
             <!-- Loader -->
@@ -676,9 +712,12 @@
             </div>
 
             <!-- Grouped Punch Records list -->
-            <div v-else-if="Object.keys(groupedFreqLogs).length > 0" style="max-height: 400px; overflow-y: auto; text-align: left;">
+            <div v-else-if="Object.keys(groupedFreqLogs).length > 0"
+              style="max-height: 400px; overflow-y: auto; text-align: left;">
               <div v-for="(dayLogs, dayStr) in groupedFreqLogs" :key="dayStr" class="mb-4">
-                <h6 class="text-primary fw-bold mb-2 border-bottom border-glass pb-1" style="font-size: 0.85rem;">{{ dayStr }}</h6>
+                <h6 class="text-primary fw-bold mb-2 border-bottom border-glass pb-1" style="font-size: 0.85rem;">{{
+                  dayStr
+                  }}</h6>
                 <table class="table custom-table text-white mb-0">
                   <tbody>
                     <tr v-for="log in dayLogs" :key="log.id">
@@ -688,19 +727,22 @@
                           <span class="small font-monospace text-white-50">{{ formatLocalTime(log.timestamp) }}</span>
                         </td>
                         <td style="width: 30%;" class="align-middle">
-                          <span v-if="log.type === 'punch_in'" class="badge-status badge-active bg-success bg-opacity-15 text-success border-success border-opacity-25 px-2 py-1 small">
+                          <span v-if="log.type === 'punch_in'"
+                            class=" text-success border-success border-opacity-25 px-2 py-1 small">
                             <i class="bi bi-box-arrow-in-right me-1"></i> Punch In
                           </span>
-                          <span v-else class="badge-status badge-inactive bg-danger bg-opacity-15 text-danger border-danger border-opacity-25 px-2 py-1 small">
+                          <span v-else class=" text-danger border-danger border-opacity-25 px-2 py-1 small">
                             <i class="bi bi-box-arrow-left me-1"></i> Punch Out
                           </span>
                         </td>
                         <td style="width: 20%;" class="align-middle text-end">
                           <div class="d-inline-flex gap-1">
-                            <button @click="startEditLog(log)" class="btn btn-outline-warning btn-sm p-1" title="Edit Entry" style="line-height: 1;">
+                            <button @click="startEditLog(log)" class="btn btn-outline-warning btn-sm p-1"
+                              title="Edit Entry" style="line-height: 1;">
                               <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
                             </button>
-                            <button @click="deleteLog(log.id)" class="btn btn-outline-danger btn-sm p-1" title="Delete Entry" style="line-height: 1;">
+                            <button @click="deleteLog(log.id)" class="btn btn-outline-danger btn-sm p-1"
+                              title="Delete Entry" style="line-height: 1;">
                               <i class="bi bi-trash" style="font-size: 0.8rem;"></i>
                             </button>
                           </div>
@@ -710,10 +752,13 @@
                       <!-- Inline Editing Mode -->
                       <template v-else>
                         <td style="width: 40%;" class="align-middle">
-                          <input type="time" v-model="editLogTime" class="form-control form-control-sm bg-dark border-glass text-white font-monospace" step="1" required />
+                          <input type="time" v-model="editLogTime"
+                            class="form-control form-control-sm bg-dark border-glass text-white font-monospace" step="1"
+                            required />
                         </td>
                         <td style="width: 30%;" class="align-middle">
-                          <select v-model="editLogType" class="form-select form-select-sm bg-dark border-glass text-white" required>
+                          <select v-model="editLogType"
+                            class="form-select form-select-sm bg-dark border-glass text-white" required>
                             <option value="punch_in">In</option>
                             <option value="punch_out">Out</option>
                           </select>
@@ -748,12 +793,15 @@
     </div>
 
     <!-- MODAL 6: ADD/EDIT ADMINISTRATOR -->
-    <div v-if="showAdminModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showAdminModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
-            <h5 class="modal-title text-white fw-bold">{{ isEditingAdmin ? 'Edit Administrator' : 'Add Administrator' }}</h5>
-            <button type="button" @click="closeAdminModal" class="btn-close btn-close-white" aria-label="Close"></button>
+            <h5 class="modal-title text-white fw-bold">{{ isEditingAdmin ? 'Edit Administrator' : 'Add Administrator' }}
+            </h5>
+            <button type="button" @click="closeAdminModal" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <form @submit.prevent="triggerAdminSaveConfirm">
             <div class="modal-body p-4 text-start">
@@ -763,19 +811,23 @@
               </div>
               <div class="mb-3">
                 <label for="adminPassword" class="form-label text-muted small fw-bold">
-                  PASSWORD <span v-if="isEditingAdmin" class="text-muted font-monospace">(LEAVE BLANK TO KEEP UNCHANGED)</span>
+                  PASSWORD <span v-if="isEditingAdmin" class="text-muted font-monospace">(LEAVE BLANK TO KEEP
+                    UNCHANGED)</span>
                 </label>
-                <input v-model="adminFormPassword" type="password" id="adminPassword" class="form-control" :required="!isEditingAdmin" />
+                <input v-model="adminFormPassword" type="password" id="adminPassword" class="form-control"
+                  :required="!isEditingAdmin" />
               </div>
               <div class="mb-3">
                 <label for="adminRole" class="form-label text-muted small fw-bold">ROLE</label>
-                <select v-model="adminFormRole" id="adminRole" class="form-select bg-dark border-glass text-white" required>
+                <select v-model="adminFormRole" id="adminRole" class="form-select bg-dark border-glass text-white"
+                  required>
                   <option value="admin">Admin</option>
                   <option value="superadmin">Superadmin</option>
                 </select>
               </div>
 
-              <div v-if="adminFormError" class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-0">
+              <div v-if="adminFormError"
+                class="alert alert-danger bg-danger bg-opacity-10 border-0 text-danger rounded-3 py-2 small mb-0">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ adminFormError }}
               </div>
             </div>
@@ -792,18 +844,21 @@
     </div>
 
     <!-- MODAL 7: CONFIRM SAVE ADMINISTRATOR -->
-    <div v-if="showAdminSaveConfirmModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showAdminSaveConfirmModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
             <h5 class="modal-title text-white fw-bold">Confirm Account Changes</h5>
-            <button type="button" @click="showAdminSaveConfirmModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+            <button type="button" @click="showAdminSaveConfirmModal = false" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-start text-white-50">
             <p>Are you sure you want to save this administrator account?</p>
           </div>
           <div class="modal-footer border-glass">
-            <button type="button" @click="showAdminSaveConfirmModal = false" class="btn btn-outline-secondary px-4">Cancel</button>
+            <button type="button" @click="showAdminSaveConfirmModal = false"
+              class="btn btn-outline-secondary px-4">Cancel</button>
             <button type="button" @click="saveAdminAccount" class="btn btn-primary px-4" :disabled="adminFormSaving">
               <span v-if="adminFormSaving" class="spinner-border spinner-border-sm me-2"></span>
               Confirm Save
@@ -814,22 +869,27 @@
     </div>
 
     <!-- MODAL 8: CONFIRM DELETE ADMINISTRATOR -->
-    <div v-if="showAdminDeleteModal" class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+    <div v-if="showAdminDeleteModal" class="modal d-block" tabindex="-1"
+      style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-glass">
             <h5 class="modal-title text-white fw-bold">Remove Administrator</h5>
-            <button type="button" @click="showAdminDeleteModal = false" class="btn-close btn-close-white" aria-label="Close"></button>
+            <button type="button" @click="showAdminDeleteModal = false" class="btn-close btn-close-white"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-start">
-            <p class="text-white-50">Are you sure you want to delete administrator <strong>{{ adminToDelete?.username }}</strong>?</p>
-            <p class="text-danger small bg-danger bg-opacity-10 py-2 px-3 rounded border border-danger border-opacity-15 mb-0">
+            <p class="text-white-50">Are you sure you want to delete administrator <strong>{{ adminToDelete?.username
+                }}</strong>?</p>
+            <p
+              class="text-danger small bg-danger bg-opacity-10 py-2 px-3 rounded border border-danger border-opacity-15 mb-0">
               <i class="bi bi-exclamation-octagon-fill me-1"></i>
               Warning: This will permanently remove their admin session privileges.
             </p>
           </div>
           <div class="modal-footer border-glass">
-            <button type="button" @click="showAdminDeleteModal = false" class="btn btn-outline-secondary px-4">Cancel</button>
+            <button type="button" @click="showAdminDeleteModal = false"
+              class="btn btn-outline-secondary px-4">Cancel</button>
             <button type="button" @click="deleteAdminAccount" class="btn btn-danger px-4" :disabled="adminDeleteSaving">
               <span v-if="adminDeleteSaving" class="spinner-border spinner-border-sm me-2"></span>
               Remove Administrator
@@ -840,12 +900,8 @@
     </div>
 
     <!-- Floating Add Employee Button (FAB) -->
-    <button 
-      v-if="activeTab === 'employees' && !activeEmployee" 
-      @click="showAddModal = true" 
-      class="fab-btn" 
-      title="Add Employee"
-    >
+    <button v-if="activeTab === 'employees' && !activeEmployee" @click="showAddModal = true" class="fab-btn"
+      title="Add Employee">
       <i class="bi bi-plus-lg"></i>
     </button>
   </div>
@@ -943,7 +999,7 @@ export default {
     const adminFormRole = ref('admin');
     const adminFormError = ref('');
     const adminFormSaving = ref(false);
-    
+
     // Confirm Modals admin
     const showAdminSaveConfirmModal = ref(false);
     const showAdminDeleteModal = ref(false);
@@ -985,7 +1041,7 @@ export default {
       configSaving.value = true;
       configSuccessMessage.value = '';
       configError.value = '';
-      
+
       try {
         const response = await fetch('/api/admin/config', {
           method: 'POST',
@@ -1372,7 +1428,7 @@ export default {
               const outTime = new Date(log.timestamp);
               const diffMs = outTime - inTime;
               const hours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
-              
+
               rows.push({
                 date: inTime.toLocaleDateString(navigator.language),
                 punchIn: inTime.toLocaleTimeString(navigator.language),
@@ -1609,10 +1665,10 @@ export default {
       adminFormSaving.value = true;
       showAdminSaveConfirmModal.value = false;
 
-      const url = isEditingAdmin.value 
+      const url = isEditingAdmin.value
         ? `/api/admin/admins/${selectedAdminId.value}`
         : '/api/admin/admins';
-      
+
       const method = isEditingAdmin.value ? 'PUT' : 'POST';
 
       const payload = {
@@ -1843,33 +1899,41 @@ export default {
 .modal-header .btn-close {
   box-shadow: none;
 }
+
 .italic {
   font-style: italic;
 }
+
 .fs-7 {
   font-size: 0.8rem;
 }
+
 .fs-8 {
   font-size: 0.7rem;
 }
+
 .employee-link {
   color: var(--primary-color);
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease-in-out;
 }
+
 .employee-link:hover {
   color: #9a75ff;
   text-decoration: underline !important;
 }
+
 .mobile-menu-btn {
   border: 1px solid var(--border-glass);
   background: transparent;
   color: var(--text-primary);
 }
+
 .mobile-menu-btn:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
+
 .pairing-code-block {
   background: rgba(140, 98, 255, 0.08);
   border: 1px solid rgba(140, 98, 255, 0.25);
@@ -1878,6 +1942,7 @@ export default {
   display: inline-block;
   min-width: 240px;
 }
+
 .pairing-code-label {
   font-size: 0.65rem;
   font-weight: 700;
@@ -1885,6 +1950,7 @@ export default {
   color: var(--text-muted, #888);
   margin-bottom: 0.5rem;
 }
+
 .pairing-code-digits {
   font-size: 2.8rem;
   font-weight: 800;

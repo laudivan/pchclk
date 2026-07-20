@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import db from '../config/db.js';
+import { config } from '../config/index.js';
 
 const router = express.Router();
 
@@ -123,6 +124,7 @@ router.get('/logs', (req, res) => {
 
     res.json({
       success: true,
+      globalStartDay: config.globalStartDay,
       logs
     });
   } catch (error) {
