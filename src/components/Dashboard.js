@@ -952,9 +952,14 @@ export function initDashboard(container, props) {
       
       if (!empId || !date || !time || !type) return;
 
-      const timestamp = new Date(`${date}T${time}:00`).toISOString();
-
       try {
+        const cleanTime = time.length === 5 ? `${time}:00` : time;
+        const dateObj = new Date(`${date}T${cleanTime}`);
+        if (isNaN(dateObj.getTime())) {
+          throw new Error('Invalid date or time value');
+        }
+        const timestamp = dateObj.toISOString();
+
         await apiRequest('/api/admin/logs', {
           method: 'POST',
           body: JSON.stringify({ employee_id: parseInt(empId), timestamp, type })
@@ -1011,9 +1016,14 @@ export function initDashboard(container, props) {
       
       if (!date || !time || !type) return;
 
-      const timestamp = new Date(`${date}T${time}:00`).toISOString();
-
       try {
+        const cleanTime = time.length === 5 ? `${time}:00` : time;
+        const dateObj = new Date(`${date}T${cleanTime}`);
+        if (isNaN(dateObj.getTime())) {
+          throw new Error('Invalid date or time value');
+        }
+        const timestamp = dateObj.toISOString();
+
         await apiRequest(`/api/admin/logs/${log.id}`, {
           method: 'PUT',
           body: JSON.stringify({ timestamp, type })
