@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import * as bootstrap from 'bootstrap';
 import { handleRouting } from '../router.js';
 import { renderThemeToggle, bindThemeToggle } from './ThemeToggle.js';
 
