@@ -5,21 +5,21 @@ import { renderThemeToggle, bindThemeToggle } from './ThemeToggle.js';
 
 export function initDashboard(container, props) {
   let activeTab = 'employees';
-  
+
   // State
   let employees = [];
   let logs = [];
   let admins = [];
   let config = { globalStartDay: 20 };
-  
+
   let filterMonth = new Date().getMonth() + 1;
   let filterYear = new Date().getFullYear();
   let exportMonth = new Date().getMonth() + 1;
   let exportYear = new Date().getFullYear();
-  
+
   let loading = false;
   let errorMsg = '';
-  
+
   // Active period display info
   let logPeriod = { start: '', end: '', startDay: 20 };
 
@@ -279,23 +279,13 @@ export function initDashboard(container, props) {
       <div class="glass-panel p-4 border-glass text-start">
         <div class="table-responsive">
           <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>Registration</th>
-                <th>Employee Name</th>
-                <th>Worked Hours</th>
-                <th>Status</th>
-                <th>Device Key</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
             <tbody>
               ${employees.map(emp => `
                 <tr>
                   <td><code>${emp.registration_number}</code></td>
                   <td class="fw-bold text-white">${emp.name}</td>
                   <td>
-                    <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1 rounded">
+                    <span class="text-primary">
                       ${(emp.worked_hours || 0).toFixed(2)}h
                     </span>
                   </td>
@@ -316,13 +306,10 @@ export function initDashboard(container, props) {
                       <button class="btn btn-sm btn-outline-secondary btn-edit-emp" data-id="${emp.id}" title="Edit Profile">
                         <i class="bi bi-pencil-fill"></i>
                       </button>
-                      <button class="btn btn-sm btn-edit-emp-status" data-id="${emp.id}" data-status="${emp.status}" title="Toggle status">
-                        <i class="bi ${emp.status === 'active' ? 'bi-lock-fill text-warning' : 'bi-unlock-fill text-success'}"></i>
-                      </button>
-                      <button class="btn btn-sm ${emp.paired ? 'btn-danger bg-opacity-10 text-danger border-danger' : 'btn-primary'} btn-pair-emp" data-id="${emp.id}" data-paired="${emp.paired ? '1' : '0'}">
+                      <button class="btn btn-sm ${emp.paired ? 'btn-outline-danger' : 'btn-outline-primary'} btn-pair-emp" data-id="${emp.id}" data-paired="${emp.paired ? '1' : '0'}">
                         ${emp.paired ? 'Unpair' : 'Pair'}
                       </button>
-                      <button class="btn btn-sm btn-danger bg-opacity-10 text-danger border-danger btn-delete-emp" data-id="${emp.id}" title="Delete Employee">
+                      <button class="btn btn-sm btn-outline-danger btn-delete-emp" data-id="${emp.id}" title="Delete Employee">
                         <i class="bi bi-trash-fill"></i>
                       </button>
                     </div>
@@ -454,21 +441,13 @@ export function initDashboard(container, props) {
       <div class="glass-panel p-4 border-glass text-start">
         <div class="table-responsive">
           <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>Punch Date & Hour</th>
-                <th>Employee Name</th>
-                <th>Punch Type</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
             <tbody>
               ${logs.map(log => `
                 <tr>
                   <td class="text-white font-monospace">${new Date(log.timestamp).toLocaleString()}</td>
                   <td class="fw-bold text-white">${log.employee_name}</td>
                   <td>
-                    <span class="badge ${log.type === 'punch_in' ? 'bg-success bg-opacity-15 text-success border border-success border-opacity-25' : 'bg-danger bg-opacity-15 text-danger border border-danger border-opacity-25'} px-3 py-1 rounded">
+                    <span class="badge ${log.type === 'punch_in' ? 'bg-outline-success' : 'bg-danger bg-opacity-15 border border-danger border-opacity-25'} px-3 py-1 rounded">
                       ${log.type === 'punch_in' ? 'Punch In' : 'Punch Out'}
                     </span>
                   </td>
@@ -477,7 +456,7 @@ export function initDashboard(container, props) {
                       <button class="btn btn-sm btn-outline-secondary btn-edit-log" data-id="${log.id}">
                         <i class="bi bi-pencil-fill"></i>
                       </button>
-                      <button class="btn btn-sm btn-danger bg-opacity-10 text-danger border-danger btn-delete-log" data-id="${log.id}">
+                      <button class="btn btn-sm btn-outline-danger btn-delete-log" data-id="${log.id}">
                         <i class="bi bi-trash-fill"></i>
                       </button>
                     </div>
@@ -549,7 +528,6 @@ export function initDashboard(container, props) {
               <tr>
                 <th>Username</th>
                 <th>Role</th>
-                <th>Created At</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -558,17 +536,16 @@ export function initDashboard(container, props) {
                 <tr>
                   <td class="text-white fw-bold">${adm.username}</td>
                   <td>
-                    <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1 rounded">
+                    <span class="text-primary">
                       ${adm.role}
                     </span>
                   </td>
-                  <td class="text-muted font-monospace">${new Date(adm.created_at).toLocaleString()}</td>
                   <td>
                     <div class="d-flex gap-2">
                       <button class="btn btn-sm btn-outline-secondary btn-edit-admin" data-id="${adm.id}">
                         <i class="bi bi-pencil-fill"></i>
                       </button>
-                      <button class="btn btn-sm btn-danger bg-opacity-10 text-danger border-danger btn-delete-admin" data-id="${adm.id}">
+                      <button class="btn btn-sm btn-outline-danger btn-delete-admin" data-id="${adm.id}">
                         <i class="bi bi-trash-fill"></i>
                       </button>
                     </div>
@@ -711,7 +688,7 @@ export function initDashboard(container, props) {
       const btn = container.querySelector('#btn-trigger-export');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generating...';
-      
+
       try {
         // Fetch logs
         const logsData = await apiRequest(`/api/admin/logs?month=${exportMonth}&year=${exportYear}`);
@@ -741,7 +718,7 @@ export function initDashboard(container, props) {
               const outTime = new Date(log.timestamp);
               const diffMs = outTime - inTime;
               const hours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2));
-              
+
               rows.push({
                 date: inTime.toLocaleDateString(navigator.language),
                 punchIn: inTime.toLocaleTimeString(navigator.language),
@@ -949,17 +926,17 @@ export function initDashboard(container, props) {
       const date = modalEl.querySelector('#log-date').value;
       const time = modalEl.querySelector('#log-time').value;
       const type = modalEl.querySelector('#log-type').value;
-      
+
       if (!empId || !date || !time || !type) return;
 
       try {
         const cleanTime = time.length === 5 ? `${time}:00` : time;
         const [year, month, day] = date.split('-').map(Number);
         const [hours, minutes, seconds] = cleanTime.split(':').map(Number);
-        
+
         // Construct date using components in local timezone safely
         const dateObj = new Date(year, month - 1, day, hours, minutes, seconds || 0);
-        
+
         if (isNaN(dateObj.getTime())) {
           throw new Error('Invalid date or time value');
         }
@@ -1018,17 +995,17 @@ export function initDashboard(container, props) {
       const date = modalEl.querySelector('#log-date').value;
       const time = modalEl.querySelector('#log-time').value;
       const type = modalEl.querySelector('#log-type').value;
-      
+
       if (!date || !time || !type) return;
 
       try {
         const cleanTime = time.length === 5 ? `${time}:00` : time;
         const [year, month, day] = date.split('-').map(Number);
         const [hours, minutes, seconds] = cleanTime.split(':').map(Number);
-        
+
         // Construct date using components in local timezone safely
         const dateObj = new Date(year, month - 1, day, hours, minutes, seconds || 0);
-        
+
         if (isNaN(dateObj.getTime())) {
           throw new Error('Invalid date or time value');
         }
@@ -1077,7 +1054,7 @@ export function initDashboard(container, props) {
       const username = modalEl.querySelector('#adm-user').value;
       const password = modalEl.querySelector('#adm-pass').value;
       const role = modalEl.querySelector('#adm-role').value;
-      
+
       if (!username || !password || !role) return;
 
       try {
@@ -1123,7 +1100,7 @@ export function initDashboard(container, props) {
     modalEl.querySelector('#btn-modal-save-adm').addEventListener('click', async () => {
       const password = modalEl.querySelector('#adm-pass').value;
       const role = modalEl.querySelector('#adm-role').value;
-      
+
       if (!role) return;
 
       const bodyObj = { role };
