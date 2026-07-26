@@ -954,7 +954,12 @@ export function initDashboard(container, props) {
 
       try {
         const cleanTime = time.length === 5 ? `${time}:00` : time;
-        const dateObj = new Date(`${date}T${cleanTime}`);
+        const [year, month, day] = date.split('-').map(Number);
+        const [hours, minutes, seconds] = cleanTime.split(':').map(Number);
+        
+        // Construct date using components in local timezone safely
+        const dateObj = new Date(year, month - 1, day, hours, minutes, seconds || 0);
+        
         if (isNaN(dateObj.getTime())) {
           throw new Error('Invalid date or time value');
         }
@@ -1018,7 +1023,12 @@ export function initDashboard(container, props) {
 
       try {
         const cleanTime = time.length === 5 ? `${time}:00` : time;
-        const dateObj = new Date(`${date}T${cleanTime}`);
+        const [year, month, day] = date.split('-').map(Number);
+        const [hours, minutes, seconds] = cleanTime.split(':').map(Number);
+        
+        // Construct date using components in local timezone safely
+        const dateObj = new Date(year, month - 1, day, hours, minutes, seconds || 0);
+        
         if (isNaN(dateObj.getTime())) {
           throw new Error('Invalid date or time value');
         }
