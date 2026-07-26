@@ -241,7 +241,8 @@ export function initEmployeePWA(container) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             device_key: punch.device_key,
-            token: punch.token
+            token: punch.token,
+            timestamp: punch.timestamp
           })
         });
 

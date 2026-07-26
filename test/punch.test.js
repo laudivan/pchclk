@@ -43,10 +43,14 @@ before(async () => {
     VALUES (1, 'AUTH111', 'paired-device-key-active', '2026-07-19T12:00:00Z', 1, '2026-07-20T12:00:00Z')
   `).run();
 
-  // 2. Inactive paired device authorization for Employee 2
+  // 2. Inactive paired device authorization for Employee 2, and an active one for Employee 2
   db.prepare(`
     INSERT INTO device_authorizations (employee_id, auth_code, device_key, paired_at, is_active, expires_at)
     VALUES (2, 'AUTH222', 'paired-device-key-inactive', '2026-07-19T12:00:00Z', 0, '2026-07-20T12:00:00Z')
+  `).run();
+  db.prepare(`
+    INSERT INTO device_authorizations (employee_id, auth_code, device_key, paired_at, is_active, expires_at)
+    VALUES (2, 'AUTH222_active', 'paired-device-key-active-emp2', '2026-07-19T12:00:00Z', 1, '2026-07-20T12:00:00Z')
   `).run();
 
   // 3. Set Employee 3 to 'inactive' and add an active paired device
@@ -216,6 +220,17 @@ test('POST /api/punch - Success with current 15m block token', async () => {
   });
   assert.strictEqual(resDouble.status, 400);
   assert.strictEqual(resDouble.data.error, 'This QR code has already been used for a punch');
+
+  // Different employee can use the same token (should succeed)
+  const resEmp2 = await makeRequest('/api/punch', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      device_key: 'paired-device-key-active-emp2',
+      token: currentToken
+    }),
+  });
+  assert.strictEqual(resEmp2.status, 200);
+  assert.strictEqual(resEmp2.data.success, true);
 });
 
 test('POST /api/punch - Success with previous 15m block token (grace period)', async () => {

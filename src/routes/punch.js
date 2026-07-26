@@ -36,14 +36,16 @@ router.post('/', (req, res) => {
       return res.status(403).json({ error: 'Employee account is inactive' });
     }
 
-    // 2. Reconcile dynamic validation token
+    // 2. Reconcile dynamic validation token and timestamp
     let hash_validated = 0;
+    const nowIso = req.body.timestamp || new Date().toISOString();
+
     if (token) {
       const secret = process.env.JWT_SECRET || 'fallback-tv-secret';
-      const now = Date.now();
+      const timeForHash = req.body.timestamp ? new Date(req.body.timestamp).getTime() : Date.now();
       
-      const currentHash = generateHashForBlock(now, secret);
-      const previousHash = generateHashForBlock(now - 15 * 60 * 1000, secret);
+      const currentHash = generateHashForBlock(timeForHash, secret);
+      const previousHash = generateHashForBlock(timeForHash - 15 * 60 * 1000, secret);
 
       if (token === currentHash || token === previousHash) {
         hash_validated = 1;
@@ -58,13 +60,18 @@ router.post('/', (req, res) => {
       }
     }
 
+    // Check if this exact timestamp was already recorded for the same employee
+    const duplicateTimestamp = db.prepare('SELECT 1 FROM logs WHERE employee_id = ? AND timestamp = ?').get(auth.emp_id, nowIso);
+    if (duplicateTimestamp) {
+      return res.status(400).json({ error: 'A punch record with this timestamp already exists for this employee' });
+    }
+
     // 3. Register punch log entry (auto-determine punch_in/punch_out type)
     const lastLog = db.prepare('SELECT type FROM logs WHERE employee_id = ? ORDER BY timestamp DESC, id DESC LIMIT 1').get(auth.emp_id);
     const type = (!lastLog || lastLog.type === 'punch_out') ? 'punch_in' : 'punch_out';
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
-    const nowIso = new Date().toISOString();
 
     db.prepare(`
       INSERT INTO logs (employee_id, timestamp, device_key, type, hash_validated, qr_token, ip_address, user_agent)
