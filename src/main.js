@@ -1,11 +1,21 @@
-import { createApp } from 'vue';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './style.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import App from './App.vue';
+import { handleRouting } from './router.js';
 
-createApp(App).mount('#app');
+// DOM mount and simple SPA URL navigation router
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('app');
+  if (container) {
+    handleRouting(container);
+
+    // Route dynamically on popstate (back/forward browser navigations)
+    window.addEventListener('popstate', () => {
+      handleRouting(container);
+    });
+  }
+});
 
 // Register PWA service worker for offline capabilities
 if ('serviceWorker' in navigator) {

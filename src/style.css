@@ -6,9 +6,11 @@
   --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* HSL Color System - Deep Violet and Glowing Accents */
+  /* Default Black (Dark Glassmorphic) Theme variables */
   --bg-dark: #090a0f;
-  --bg-card: rgba(118, 120, 129, 0.6);
+  --bg-radial-gradient: radial-gradient(at 10% 20%, rgba(124, 77, 255, 0.12) 0px, transparent 50%),
+                        radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+  --bg-card: rgba(118, 120, 129, 0.06);
   --border-glass: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(124, 77, 255, 0.4);
   
@@ -22,21 +24,49 @@
   --text-muted: #9ca3af;
   --text-highlight: #ffffff;
 
+  --bg-input: rgba(15, 17, 26, 0.7);
+  --bg-input-focus: rgba(15, 17, 26, 0.95);
+  --bg-table-row: rgba(20, 22, 33, 0.4);
+  --bg-modal: #12141d;
+  
   --bs-secondary-color: rgba(133, 137, 141, 0.75);
   --bs-emphasis-color: rgba(11, 15, 20, 0.75);
+}
+
+/* Light Theme Override */
+body.theme-light {
+  --bg-dark: #f3f4f6;
+  --bg-radial-gradient: radial-gradient(at 10% 20%, rgba(124, 77, 255, 0.05) 0px, transparent 50%),
+                        radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --border-focus: rgba(140, 98, 255, 0.6);
+  
+  --primary-color: #703bf5;
+  --primary-glow: rgba(112, 59, 245, 0.2);
+  --text-primary: #1f2937;
+  --text-muted: #6b7280;
+  --text-highlight: #111827;
+
+  --bg-input: rgba(255, 255, 255, 0.95);
+  --bg-input-focus: #ffffff;
+  --bg-table-row: rgba(255, 255, 255, 0.6);
+  --bg-modal: #ffffff;
+  
+  --bs-secondary-color: rgba(100, 100, 100, 0.75);
+  --bs-emphasis-color: rgba(200, 200, 200, 0.75);
 }
 
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-dark);
-  background-image: 
-    radial-gradient(at 10% 20%, rgba(124, 77, 255, 0.12) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+  background-image: var(--bg-radial-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   margin: 0;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Glassmorphism Styles */
@@ -46,18 +76,18 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-glass);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
   border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* Inputs & Form Controls */
 .form-control, .form-select {
-  background-color: rgba(15, 17, 26, 0.7);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-glass);
   color: var(--text-primary) !important;
   border-radius: 10px;
@@ -66,7 +96,7 @@ body {
 }
 
 .form-control:focus, .form-select:focus {
-  background-color: rgba(15, 17, 26, 0.95);
+  background-color: var(--bg-input-focus);
   border-color: var(--primary-color);
   box-shadow: 0 0 0 4px var(--primary-glow);
   outline: none;
@@ -158,6 +188,7 @@ body {
 /* Custom Table Design */
 .table {
   --bs-table-bg: none;
+  color: var(--text-primary);
 }
 
 .custom-table {
@@ -178,10 +209,11 @@ body {
 }
 
 .custom-table td {
-  background: rgba(20, 22, 33, 0.4);
+  background: var(--bg-table-row);
   border-top: 1px solid var(--border-glass);
   border-bottom: 1px solid var(--border-glass);
   padding: 16px;
+  color: var(--text-primary);
 }
 
 .custom-table td:first-child {
@@ -203,10 +235,11 @@ body {
 
 /* Modal styling */
 .modal-content {
-  background-color: #12141d;
+  background-color: var(--bg-modal);
   border: 1px solid var(--border-glass);
   border-radius: 18px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
 }
 
 .modal-header {
